@@ -1,0 +1,145 @@
+/* admin.css — estilos base del panel administrativo, sin relación con la paleta
+   pública (esto lo ves solo tú, no el invitado). */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #f4f3ef;
+  color: #2c2c2a;
+}
+
+.pantalla { max-width: 420px; margin: 60px auto; padding: 0 20px; }
+
+h1 { font-size: 20px; margin-bottom: 20px; }
+
+form { display: flex; flex-direction: column; gap: 14px; }
+
+label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+
+input {
+  padding: 10px 12px;
+  border: 1px solid #cfccc2;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #993c1d;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-secundario {
+  background: transparent;
+  color: #993c1d;
+  border: 1px solid #993c1d;
+}
+
+.error { color: #a32d2d; font-size: 13px; }
+
+.pantalla-ancha { max-width: 860px; margin: 0 auto; padding: 24px 20px 80px; }
+
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+
+.lista-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.lista-header-botones { display: flex; gap: 8px; }
+
+.seccion-ayuda-panel {
+  background: #faeeda; border-left: 3px solid #ba7517; padding: 8px 12px;
+  font-size: 12px; color: #5f5e5a; margin: 0 0 10px;
+}
+
+.lista-ordenable { display: flex; flex-direction: column; gap: 6px; }
+.fila-bloque {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #f7f6f2; border: 1px solid #e2e0d6; border-radius: 6px; padding: 8px 10px;
+}
+.fila-bloque .chk { font-size: 13px; }
+.flechas { display: flex; gap: 4px; }
+.btn-flecha {
+  width: 26px; height: 26px; padding: 0; border-radius: 4px; background: #fff;
+  border: 1px solid #cfccc2; color: #2c2c2a; cursor: pointer;
+}
+.btn-flecha:disabled { opacity: 0.3; cursor: default; }
+.fila-musica { opacity: 0.85; }
+.nota-musica { font-size: 11px; color: #8a8a86; }
+
+.form-paleta { background: #fff; border: 1px solid #e2e0d6; border-radius: 8px; padding: 14px; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.campo-color { flex-direction: row; align-items: center; gap: 8px; }
+.campo-color label { width: 90px; }
+.mini-swatches { display: flex; gap: 4px; margin-top: 4px; }
+.mini-swatches span { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+
+#lista-clientes { display: flex; flex-direction: column; gap: 8px; }
+
+.fila-cliente {
+  text-align: left; background: #fff; border: 1px solid #e2e0d6; border-radius: 8px;
+  padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 2px;
+}
+.fila-cliente:hover { border-color: #993c1d; }
+.fila-cliente span { font-size: 12px; color: #8a8a86; }
+.lista-vacia { color: #8a8a86; font-size: 14px; }
+
+.editor-header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
+}
+.editor-id { font-size: 12px; color: #8a8a86; }
+.editor-acciones { display: flex; align-items: center; gap: 10px; }
+.guardar-estado { font-size: 13px; color: #2e7d32; }
+
+h3 { margin-top: 28px; margin-bottom: 10px; font-size: 15px; }
+
+.form-global, .panel-seccion {
+  background: #fff; border: 1px solid #e2e0d6; border-radius: 8px; padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+.campo { display: flex; flex-direction: column; gap: 6px; }
+.campo label { font-size: 12px; font-weight: bold; color: #5f5e5a; }
+.campo input[type="text"], .campo input[type="number"], .campo input[type="datetime-local"],
+.campo select, .campo textarea { padding: 8px 10px; border: 1px solid #cfccc2; border-radius: 6px; font-size: 13px; }
+
+.rejilla-bloques { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.chk { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: normal; }
+
+.campo-archivo .archivo-preview { max-width: 160px; border-radius: 6px; display: block; }
+.archivo-ayuda { font-size: 11px; color: #8a8a86; margin: 0; }
+
+.campo-lista .lista-filas { display: flex; flex-direction: column; gap: 8px; }
+.fila-lista { display: flex; align-items: center; gap: 8px; }
+.fila-lista input[type="text"] { flex: 1; padding: 8px 10px; border: 1px solid #cfccc2; border-radius: 6px; }
+.fila-archivo .archivo-preview { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+.fila-objeto { flex-wrap: wrap; }
+.fila-objeto input { padding: 8px 10px; border: 1px solid #cfccc2; border-radius: 6px; }
+.btn-quitar { background: none; border: none; color: #a32d2d; cursor: pointer; font-size: 14px; }
+.btn-agregar { align-self: flex-start; background: #f1efe8; color: #2c2c2a; border: 1px dashed #b4b2a9; }
+
+.widget-estilo { border-top: 1px dashed #e2e0d6; padding-top: 10px; }
+.widget-estilo summary { cursor: pointer; font-size: 13px; color: #993c1d; }
+.widget-estilo .chk { margin-top: 10px; }
+.widget-estilo select, .widget-estilo input[type="text"], .widget-estilo input[type="number"] {
+  margin-top: 4px; padding: 6px 8px; border: 1px solid #cfccc2; border-radius: 6px; font-size: 12px;
+}
+.aviso-fuente { font-size: 11px; color: #ba7517; margin: 4px 0 0; }
+
+.widget-estilo-campo { margin-top: 4px; }
+.widget-estilo-campo summary { cursor: pointer; font-size: 11px; color: #8a8a86; }
+.widget-estilo-campo .chk { margin-top: 6px; font-size: 12px; }
+.widget-estilo-campo select, .widget-estilo-campo input[type="text"], .widget-estilo-campo input[type="number"] {
+  margin-top: 4px; padding: 5px 8px; border: 1px solid #cfccc2; border-radius: 6px; font-size: 11px; width: 100%;
+}
+
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.tab { background: #fff; border: 1px solid #cfccc2; padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; }
+.tab.activo { background: #993c1d; color: #fff; border-color: #993c1d; }
+
+.panel-header { display: flex; justify-content: space-between; align-items: center; }
+
+.panel-nota { font-size: 14px; color: #5f5e5a; line-height: 1.5; }

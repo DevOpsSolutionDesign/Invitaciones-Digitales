@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel administrativo — Invitaciones</title>
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <div id="pantalla-login" class="pantalla">
+    <h1>Panel administrativo</h1>
+    <form id="form-login">
+      <label>Correo
+        <input type="email" id="admin-correo" required autocomplete="username">
+      </label>
+      <label>Contraseña
+        <input type="password" id="admin-clave" required autocomplete="current-password">
+      </label>
+      <button type="submit">Entrar</button>
+      <p id="login-error" class="error" hidden></p>
+    </form>
+  </div>
+
+  <div id="pantalla-panel" class="pantalla-ancha" hidden>
+    <header class="panel-header">
+      <h1>Invitaciones digitales</h1>
+      <button id="btn-salir" class="btn-secundario">Cerrar sesión</button>
+    </header>
+
+    <!-- Vista: listado de clientes -->
+    <section id="vista-lista">
+      <div class="lista-header">
+        <h2>Clientes</h2>
+        <div class="lista-header-botones">
+          <button id="btn-paletas" class="btn-secundario">Gestionar paletas</button>
+          <button id="btn-nuevo-cliente">+ Nuevo cliente</button>
+        </div>
+      </div>
+      <div id="lista-clientes"></div>
+    </section>
+
+    <!-- Vista: gestión de paletas -->
+    <section id="vista-paletas" hidden>
+      <div class="lista-header">
+        <h2>Paletas de colores</h2>
+        <div class="lista-header-botones">
+          <button id="btn-volver-desde-paletas" class="btn-secundario">← Volver a clientes</button>
+          <button id="btn-nueva-paleta">+ Nueva paleta</button>
+        </div>
+      </div>
+      <div id="lista-paletas"></div>
+    </section>
+
+    <!-- Vista: editor de un cliente -->
+    <section id="vista-editor" hidden>
+      <div class="editor-header">
+        <button id="btn-volver-lista" class="btn-secundario">← Volver a clientes</button>
+        <span class="editor-id">ID: <code id="editor-id-cliente"></code></span>
+        <div class="editor-acciones">
+          <button id="btn-preview" class="btn-secundario">Vista previa</button>
+          <button id="btn-guardar">Guardar cambios</button>
+          <span id="guardar-estado" class="guardar-estado" hidden></span>
+        </div>
+      </div>
+
+      <h3>Configuración global</h3>
+      <div id="form-global" class="form-global"></div>
+
+      <h3>Contenido por sección</h3>
+      <div id="tabs-secciones" class="tabs"></div>
+      <p id="seccion-ayuda" class="seccion-ayuda-panel" hidden></p>
+      <div id="panel-seccion" class="panel-seccion"></div>
+    </section>
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
