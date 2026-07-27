@@ -385,6 +385,49 @@ body {
   transform: translateY(0);
 }
 /* ============================================
+   Componentes especificos de Musica icono flotante.
+   ============================================ */
+.bloque-flotante.bloque-musica {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+#musica-boton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-acento);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.musica-icono::before {
+  content: "♪";
+  font-size: 18px;
+}
+#musica-boton.sonando .musica-icono::before {
+  content: "❚❚";
+  font-size: 13px;
+}
+.musica-titulo {
+  font-size: 0.65em;
+  background: #ffffffcc;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin: 0;
+  max-width: 90px;
+  text-align: center;
+}
+/* ============================================
    Configuracion para pantallas pequeñas.
    ============================================ */
 @media (max-width: 768px) {
@@ -421,9 +464,8 @@ body {
     font-size: 12px;
   }
   .regresiva-cajas {
-    font-size: 12px;
-    padding: 3px;
-    width: 50px;
-    height: 50px;
+    padding: 5px;
+    width: 70px;
+    height: 70px;
   }
 }
