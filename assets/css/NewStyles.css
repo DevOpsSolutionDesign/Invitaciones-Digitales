@@ -421,8 +421,9 @@ body {
     font-size: 12px;
   }
   .regresiva-cajas {
+    font-size: 15px;
     padding: 5px;
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
   }
 }
