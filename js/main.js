@@ -1,18 +1,42 @@
 // main.js
 // Motor de renderizado de la invitación pública.
 
+import { fallbackDe } from "./fuentes.js";
 import { db } from "./firebase-init.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import {
+  doc,
+  getDoc,
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const ORDEN_DEFECTO = [
-  "portada", "dedicatoria", "nombre", "detalles", "ubicacion",
-  "rsvp", "galeria", "regresiva", "programa", "regalos"
+  "portada",
+  "dedicatoria",
+  "nombre",
+  "detalles",
+  "ubicacion",
+  "rsvp",
+  "galeria",
+  "regresiva",
+  "programa",
+  "regalos",
 ];
 
 const PRESET_TAMANOS = { chico: 14, mediano: 18, grande: 24, extragrande: 32 };
 
-const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
-  "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+const MESES = [
+  "ENERO",
+  "FEBRERO",
+  "MARZO",
+  "ABRIL",
+  "MAYO",
+  "JUNIO",
+  "JULIO",
+  "AGOSTO",
+  "SEPTIEMBRE",
+  "OCTUBRE",
+  "NOVIEMBRE",
+  "DICIEMBRE",
+];
 
 async function init() {
   const contenedor = document.getElementById("invitacion");
@@ -20,7 +44,10 @@ async function init() {
   const clienteId = params.get("id");
 
   if (!clienteId) {
-    mostrarError(contenedor, "Falta el identificador de la invitación en el enlace.");
+    mostrarError(
+      contenedor,
+      "Falta el identificador de la invitación en el enlace.",
+    );
     return;
   }
 
@@ -28,13 +55,19 @@ async function init() {
   try {
     clienteSnap = await getDoc(doc(db, "clientes", clienteId));
   } catch (err) {
-    mostrarError(contenedor, "No pudimos cargar la invitación. Intenta de nuevo más tarde.");
+    mostrarError(
+      contenedor,
+      "No pudimos cargar la invitación. Intenta de nuevo más tarde.",
+    );
     console.error(err);
     return;
   }
 
   if (!clienteSnap.exists()) {
-    mostrarError(contenedor, "No encontramos esta invitación. Verifica el enlace.");
+    mostrarError(
+      contenedor,
+      "No encontramos esta invitación. Verifica el enlace.",
+    );
     return;
   }
 
@@ -55,7 +88,10 @@ async function init() {
 
   renderHeaderFijo(cliente);
 
-  const orden = (cliente.ordenBloques && cliente.ordenBloques.length) ? cliente.ordenBloques : ORDEN_DEFECTO;
+  const orden =
+    cliente.ordenBloques && cliente.ordenBloques.length
+      ? cliente.ordenBloques
+      : ORDEN_DEFECTO;
   for (const bloque of orden) {
     if (!cliente.bloquesActivos || !cliente.bloquesActivos[bloque]) continue;
     await renderBloque(bloque, cliente, contenedor);
@@ -79,6 +115,18 @@ function aplicarPaleta(colores) {
   for (const [clave, valor] of Object.entries(colores)) {
     root.style.setProperty(`--color-${clave}`, valor);
   }
+}
+
+const fuentesCargadas = new Set();
+
+function cargarFuenteGoogle(nombre) {
+  if (!nombre || fuentesCargadas.has(nombre)) return;
+  fuentesCargadas.add(nombre);
+  const familiaUrl = nombre.trim().replace(/\s+/g, "+");
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${familiaUrl}:wght@400;700&display=swap`;
+  document.head.appendChild(link);
 }
 
 function aplicarFondo(cliente) {
@@ -150,18 +198,13 @@ async function renderBloque(nombre, cliente, contenedor) {
   const seccionCfg = (cliente.secciones && cliente.secciones[nombre]) || {};
 
   aplicarEstiloSeccion(seccionEl, cliente.estiloGlobal, seccionCfg);
-  bindCampos(seccionEl, seccionCfg.datos || {}, cliente, seccionCfg.datosEstilo || {});
+  bindCampos(
+    seccionEl,
+    seccionCfg.datos || {},
+    cliente,
+    seccionCfg.datosEstilo || {},
+  );
   bindListas(seccionEl, seccionCfg.datos || {});
-
-  if (nombre === "dedicatoria") {
-    seccionEl.querySelectorAll(".dedicatoria-grupo").forEach((grupo) => {
-      if (!grupo.querySelector(".dedicatoria-nombres")) grupo.remove();
-    });
-    if (seccionCfg.datos && seccionCfg.datos.mostrarPadrinos === false) {
-      const grupoPadrinos = seccionEl.querySelector('[data-mostrar-si="padrinos"]');
-      if (grupoPadrinos) grupoPadrinos.remove();
-    }
-  }
 
   podarVacios(seccionEl);
 
@@ -171,13 +214,16 @@ async function renderBloque(nombre, cliente, contenedor) {
 
   if (nombre === "rsvp") activarRSVP(seccionEl, cliente, seccionCfg);
   if (nombre === "regresiva") activarRegresiva(seccionEl, cliente);
+  if (nombre === "galeria") activarGaleria(seccionEl);
 }
 
 // --- data binding genérico -------------------------------------------------
 
 function resolverValor(obj, path) {
   if (!obj || !path) return undefined;
-  return path.split(".").reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
+  return path
+    .split(".")
+    .reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
 }
 
 function asignarValor(el, valor) {
@@ -198,10 +244,14 @@ function aplicarEstiloCampo(el, clave, datosEstiloSeccion) {
   const override = datosEstiloSeccion && datosEstiloSeccion[clave];
   if (!override) return;
   if (override.tipografia && override.tipografia.valor) {
-    el.style.fontFamily = `'${override.tipografia.valor}', serif`;
+    cargarFuenteGoogle(override.tipografia.valor);
+    el.style.fontFamily = `'${override.tipografia.valor}', ${fallbackDe(override.tipografia.valor)}`;
   }
   if (override.tamano) {
-    const px = override.tamano.modo === "exacto" ? override.tamano.px : (PRESET_TAMANOS[override.tamano.valor] || PRESET_TAMANOS.mediano);
+    const px =
+      override.tamano.modo === "exacto"
+        ? override.tamano.px
+        : PRESET_TAMANOS[override.tamano.valor] || PRESET_TAMANOS.mediano;
     el.style.fontSize = `${px}px`;
   }
 }
@@ -210,7 +260,8 @@ function bindCampos(seccionEl, datos, cliente, datosEstiloSeccion) {
   seccionEl.querySelectorAll("[data-field]").forEach((el) => {
     const clave = el.getAttribute("data-field");
     asignarValor(el, resolverValor(datos, clave));
-    if (el.isConnected || el.parentNode) aplicarEstiloCampo(el, clave, datosEstiloSeccion);
+    if (el.isConnected || el.parentNode)
+      aplicarEstiloCampo(el, clave, datosEstiloSeccion);
   });
   seccionEl.querySelectorAll("[data-global]").forEach((el) => {
     const clave = el.getAttribute("data-global");
@@ -221,7 +272,10 @@ function bindCampos(seccionEl, datos, cliente, datosEstiloSeccion) {
 
 function bindListas(seccionEl, datos) {
   seccionEl.querySelectorAll("[data-list]").forEach((contenedorLista) => {
-    const items = resolverValor(datos, contenedorLista.getAttribute("data-list"));
+    const items = resolverValor(
+      datos,
+      contenedorLista.getAttribute("data-list"),
+    );
     const plantilla = contenedorLista.querySelector("template");
     if (!plantilla || !Array.isArray(items)) {
       if (plantilla) plantilla.remove();
@@ -235,7 +289,9 @@ function bindListas(seccionEl, datos) {
           asignarValor(el, resolverValor(item, el.getAttribute("data-field")));
         });
       } else {
-        const destino = raiz.hasAttribute("data-src-self") ? raiz : raiz.querySelector("[data-src-self]");
+        const destino = raiz.hasAttribute("data-src-self")
+          ? raiz
+          : raiz.querySelector("[data-src-self]");
         if (destino) destino.src = item;
         else raiz.textContent = item;
       }
@@ -251,8 +307,12 @@ function podarVacios(seccionEl) {
     siguioCambiando = false;
     seccionEl.querySelectorAll("div, li, ul").forEach((el) => {
       if (el === seccionEl) return;
+      if (el.hasAttribute("data-mantener-vacio")) return;
       const vacio = el.children.length === 0 && el.textContent.trim() === "";
-      if (vacio) { el.remove(); siguioCambiando = true; }
+      if (vacio) {
+        el.remove();
+        siguioCambiando = true;
+      }
     });
   }
 }
@@ -260,21 +320,31 @@ function podarVacios(seccionEl) {
 function tieneContenido(seccionEl) {
   const conTexto = seccionEl.textContent.trim().length > 0;
   const conMedia = seccionEl.querySelector("img[src], audio[src]");
-  const conFormulario = seccionEl.querySelector("input, form, button, select, textarea");
+  const conFormulario = seccionEl.querySelector(
+    "input, form, button, select, textarea",
+  );
   return conTexto || Boolean(conMedia) || Boolean(conFormulario);
 }
 
 // --- herencia de estilo a nivel sección (estiloGlobal + override) ----------
 
 function aplicarEstiloSeccion(seccionEl, estiloGlobal, seccionCfg) {
-  const tipografia = seccionCfg.tipografia || (estiloGlobal && estiloGlobal.tipografia);
+  const tipografia =
+    seccionCfg.tipografia || (estiloGlobal && estiloGlobal.tipografia);
   const tamano = seccionCfg.tamano || (estiloGlobal && estiloGlobal.tamano);
 
   if (tipografia && tipografia.valor) {
-    seccionEl.style.setProperty("--fuente-seccion", `'${tipografia.valor}', serif`);
+    cargarFuenteGoogle(tipografia.valor);
+    seccionEl.style.setProperty(
+      "--fuente-seccion",
+      `'${tipografia.valor}', ${fallbackDe(tipografia.valor)}`,
+    );
   }
   if (tamano) {
-    const px = tamano.modo === "exacto" ? tamano.px : (PRESET_TAMANOS[tamano.valor] || PRESET_TAMANOS.mediano);
+    const px =
+      tamano.modo === "exacto"
+        ? tamano.px
+        : PRESET_TAMANOS[tamano.valor] || PRESET_TAMANOS.mediano;
     seccionEl.style.setProperty("--tamano-seccion", `${px}px`);
   }
   if (seccionCfg.colorOverride) {
@@ -293,7 +363,10 @@ function activarRSVP(seccionEl, cliente) {
   form.addEventListener("submit", (evento) => {
     evento.preventDefault();
     const familia = seccionEl.querySelector("#rsvp-familia").value.trim();
-    const cantidad = parseInt(seccionEl.querySelector("#rsvp-cantidad").value, 10);
+    const cantidad = parseInt(
+      seccionEl.querySelector("#rsvp-cantidad").value,
+      10,
+    );
     if (!familia || !cantidad || cantidad < 1) return;
 
     const personas = cantidad === 1 ? "persona" : "personas";
@@ -313,14 +386,21 @@ function activarMusica(el) {
   if (!boton || !audio || !audio.src) return;
 
   boton.addEventListener("click", () => {
-    if (audio.paused) { audio.play(); boton.classList.add("sonando"); }
-    else { audio.pause(); boton.classList.remove("sonando"); }
+    if (audio.paused) {
+      audio.play();
+      boton.classList.add("sonando");
+    } else {
+      audio.pause();
+      boton.classList.remove("sonando");
+    }
   });
 }
 
 function activarRegresiva(seccionEl, cliente) {
   if (!cliente.fechaEvento) return;
-  const fechaEvento = cliente.fechaEvento.toDate ? cliente.fechaEvento.toDate() : new Date(cliente.fechaEvento);
+  const fechaEvento = cliente.fechaEvento.toDate
+    ? cliente.fechaEvento.toDate()
+    : new Date(cliente.fechaEvento);
 
   const elDias = seccionEl.querySelector("#regresiva-dias");
   const elHoras = seccionEl.querySelector("#regresiva-horas");
@@ -348,6 +428,64 @@ function activarRegresiva(seccionEl, cliente) {
   }
   actualizar();
   intervalo = setInterval(actualizar, 1000);
+}
+
+function activarGaleria(seccionEl) {
+  const track = seccionEl.querySelector(".galeria-track");
+  const diapositivas = seccionEl.querySelectorAll(".galeria-diapositiva");
+  const dotsCont = seccionEl.querySelector(".galeria-dots");
+  const btnPrev = seccionEl.querySelector(".galeria-prev");
+  const btnNext = seccionEl.querySelector(".galeria-next");
+
+  if (!track || diapositivas.length <= 1) {
+    // Sin fotos, o con una sola: no tiene sentido mostrar flechas/puntos/autoplay
+    if (btnPrev) btnPrev.remove();
+    if (btnNext) btnNext.remove();
+    if (dotsCont) dotsCont.remove();
+    return;
+  }
+
+  let indice = 0;
+  let auto;
+
+  diapositivas.forEach((_, i) => {
+    const punto = document.createElement("span");
+    punto.className = "dot" + (i === 0 ? " activo" : "");
+    punto.addEventListener("click", () => mostrar(i));
+    dotsCont.appendChild(punto);
+  });
+  const puntos = dotsCont.querySelectorAll(".dot");
+
+  function mostrar(i) {
+    indice = (i + diapositivas.length) % diapositivas.length;
+    track.style.transform = `translateX(-${indice * 100}%)`;
+    puntos.forEach((p) => p.classList.remove("activo"));
+    puntos[indice].classList.add("activo");
+  }
+
+  function iniciarAuto() {
+    detenerAuto();
+    auto = setInterval(() => mostrar(indice + 1), 5000);
+  }
+  function detenerAuto() {
+    clearInterval(auto);
+  }
+
+  btnNext.addEventListener("click", () => mostrar(indice + 1));
+  btnPrev.addEventListener("click", () => mostrar(indice - 1));
+
+  // Escritorio: pausa al pasar el cursor sobre el carrusel
+  seccionEl.addEventListener("mouseenter", detenerAuto);
+  seccionEl.addEventListener("mouseleave", iniciarAuto);
+
+  // Móvil: tocar dentro del carrusel pausa; tocar fuera reanuda
+  seccionEl.addEventListener("click", (e) => {
+    detenerAuto();
+    e.stopPropagation();
+  });
+  document.addEventListener("click", iniciarAuto);
+
+  iniciarAuto();
 }
 
 function mostrarError(contenedor, mensaje) {

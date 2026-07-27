@@ -28,17 +28,17 @@ export const ORDEN_DEFECTO = [
   "rsvp", "galeria", "regresiva", "programa", "regalos"
 ];
 
-export const FUENTES_CATALOGO = [
-  "Playfair Display", "Cormorant Garamond", "Great Vibes", "Dancing Script",
-  "Alex Brush", "Josefin Sans", "Montserrat", "Lora", "Cinzel", "Marcellus"
-];
+import { CATEGORIAS_FUENTES, FUENTES_CATALOGO, NOMBRES_FUENTES_VALIDAS } from "../../js/fuentes.js";
 
-const GOOGLE_FONTS_VALIDAS = new Set([
-  ...FUENTES_CATALOGO, "Roboto", "Open Sans", "Lato", "Poppins", "Merriweather",
-  "Raleway", "Nunito", "Oswald", "Quicksand", "EB Garamond", "Libre Baskerville",
-  "Crimson Text", "Amatic SC", "Pacifico", "Sacramento", "Tangerine", "Parisienne",
-  "Cormorant", "Cardo", "Vollkorn", "Bitter", "PT Serif", "Domine", "Spectral"
-]);
+export { FUENTES_CATALOGO };
+
+export function construirOpcionesFuentesAgrupadas(valorSeleccionado) {
+  return CATEGORIAS_FUENTES.map((grupo) => `
+    <optgroup label="${grupo.categoria}">
+      ${grupo.fuentes.map((f) => `<option value="${f.nombre}" ${valorSeleccionado === f.nombre ? "selected" : ""}>${f.nombre}</option>`).join("")}
+    </optgroup>
+  `).join("");
+}
 
 const PRESETS_TAMANO = ["chico", "mediano", "grande", "extragrande"];
 
@@ -52,21 +52,22 @@ const ESQUEMA_SECCIONES = {
       { tipo: "estilo-campo-global", clave: "fechaEventoTexto", etiqueta: "Estilo de la fecha del evento" }
     ]
   },
-  nombre: { campos: [] },
+  nombre: { 
+	campos: [
+		{ tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" }
+	] },
   dedicatoria: {
     campos: [
-      { tipo: "textarea", clave: "texto", etiqueta: "Texto de dedicatoria" },
-      { tipo: "texto", clave: "padres", etiqueta: "Nombres de los padres" },
-      { tipo: "booleano", clave: "mostrarPadrinos", etiqueta: "Mostrar padrinos" },
-      { tipo: "texto", clave: "padrinos", etiqueta: "Nombres de los padrinos" }
+      { tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" }
     ]
   },
   detalles: {
     ayuda: "Aquí van datos sueltos que no tienen su propio bloque: código de vestimenta, "
       + "restricciones (ej. \"evento sin niños\"), indicaciones de estacionamiento, hora límite "
       + "de llegada, etc. Cada entrada se muestra con su título en negrita y el contenido debajo.",
-    campos: [{
-      tipo: "lista-objeto", clave: "items", etiqueta: "Detalles",
+    campos: [
+	{tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images"},
+	{tipo: "lista-objeto", clave: "items", etiqueta: "Detalles",
       subcampos: [
         { clave: "titulo", etiqueta: "Título (ej. Código de vestimenta)" },
         { clave: "contenido", etiqueta: "Contenido (ej. Formal)" }
@@ -75,22 +76,25 @@ const ESQUEMA_SECCIONES = {
   },
   ubicacion: {
     campos: [
-      { tipo: "texto", clave: "salon.nombre", etiqueta: "Nombre del salón" },
       { tipo: "texto", clave: "salon.url", etiqueta: "URL del mapa (salón)" },
       { tipo: "archivo", clave: "salon.foto", etiqueta: "Foto del salón", carpeta: "images" },
-      { tipo: "texto", clave: "templo.nombre", etiqueta: "Nombre del templo" },
       { tipo: "texto", clave: "templo.url", etiqueta: "URL del mapa (templo)" },
       { tipo: "archivo", clave: "templo.foto", etiqueta: "Foto del templo", carpeta: "images" }
     ]
   },
-  rsvp: { campos: [], colorOverride: ["boton"] },
+  rsvp: { campos: [
+	  { tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" }
+	], colorOverride: ["boton"] },
   galeria: {
     campos: [
       { tipo: "lista-archivo", clave: "fotos", etiqueta: "Fotos de la galería (carrusel)", carpeta: "images" }
     ]
   },
   regresiva: {
-    campos: [{ tipo: "texto", clave: "etiqueta", etiqueta: "Texto de la etiqueta" }]
+    campos: [
+	{ tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" },
+	{ tipo: "texto", clave: "etiqueta", etiqueta: "Texto de la etiqueta" }
+	]
   },
   musica: {
     campos: [
@@ -99,7 +103,9 @@ const ESQUEMA_SECCIONES = {
     ]
   },
   programa: {
-    campos: [{
+    campos: [
+	{ tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" },
+	{
       tipo: "lista-objeto", clave: "eventos", etiqueta: "Eventos del programa",
       subcampos: [
         { clave: "hora", etiqueta: "Hora", tipoInput: "time" },
@@ -110,8 +116,7 @@ const ESQUEMA_SECCIONES = {
   },
   regalos: {
     campos: [
-      { tipo: "textarea", clave: "texto", etiqueta: "Texto" },
-      { tipo: "texto", clave: "linkMesa", etiqueta: "Link a mesa de regalos" }
+      { tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" }
     ]
   }
 };
@@ -274,7 +279,7 @@ function construirControlesEstilo(tipografiaActual, tamanoActual) {
     <div class="sub-tipografia" ${tipografiaActual ? "" : "hidden"}>
       <select class="sel-fuente-catalogo">
         <option value="">— elegir del catálogo —</option>
-        ${FUENTES_CATALOGO.map((f) => `<option value="${f}" ${tipografiaActual && tipografiaActual.origen === "catalogo" && tipografiaActual.valor === f ? "selected" : ""}>${f}</option>`).join("")}
+        ${construirOpcionesFuentesAgrupadas(tipografiaActual && tipografiaActual.origen === "catalogo" ? tipografiaActual.valor : null)}
       </select>
       <input type="text" class="txt-fuente-personalizada" placeholder="...o escribe una tipografía de Google Fonts"
              value="${tipografiaActual && tipografiaActual.origen === "personalizada" ? tipografiaActual.valor : ""}">
@@ -306,7 +311,7 @@ function wirearControlesEstilo(wrap) {
   if (txtFuente) {
     txtFuente.addEventListener("blur", () => {
       const valor = txtFuente.value.trim();
-      if (valor && !GOOGLE_FONTS_VALIDAS.has(valor)) {
+      if (valor && !NOMBRES_FUENTES_VALIDAS.has(valor)) {
         avisoFuente.textContent = `"${valor}" no está en nuestra lista de tipografías conocidas de Google Fonts — verifica el nombre antes de guardar.`;
         avisoFuente.hidden = false;
       } else {

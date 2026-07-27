@@ -43,7 +43,7 @@ button {
 
 .error { color: #a32d2d; font-size: 13px; }
 
-.pantalla-ancha { max-width: 860px; margin: 0 auto; padding: 24px 20px 80px; }
+.pantalla-ancha { max-width: 75%; margin: 0 auto; padding: 24px 20px 80px; }
 
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 
@@ -79,11 +79,11 @@ button {
 #lista-clientes { display: flex; flex-direction: column; gap: 8px; }
 
 .fila-cliente {
-  text-align: left; background: #fff; border: 1px solid #e2e0d6; border-radius: 8px;
+  text-align: left; background: #fff; border: 1px solid #e2e0d6; border-radius: 8px; color: #2c2c2a;
   padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 2px;
 }
 .fila-cliente:hover { border-color: #993c1d; }
-.fila-cliente span { font-size: 12px; color: #8a8a86; }
+.fila-cliente span { font-size: 12px; color: #2c2c2a; }
 .lista-vacia { color: #8a8a86; font-size: 14px; }
 
 .editor-header {
@@ -143,3 +143,416 @@ h3 { margin-top: 28px; margin-bottom: 10px; font-size: 15px; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; }
 
 .panel-nota { font-size: 14px; color: #5f5e5a; line-height: 1.5; }
+
+/* ============================================
+   PALETAS - Layout de 2 columnas
+   ============================================ */
+
+.paletas-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.paletas-lista-col {
+  flex: 0 0 300px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.paletas-editor-col {
+  flex: 1;
+  min-height: 300px;
+}
+
+.paleta-mensaje {
+  color: #8a8a86;
+  font-size: 14px;
+  text-align: center;
+  padding: 40px 0;
+  background: #fff;
+  border: 1px dashed #e2e0d6;
+  border-radius: 8px;
+}
+
+.paleta-color-header {
+  display: grid;
+  grid-template-columns: 80px 50px 50px 50px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 2px solid #e2e0d6;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #5f5e5a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.header-tipo { text-align: left; }
+.header-selector { text-align: center; }
+.header-actual { text-align: center; }
+.header-nuevo { text-align: center; }
+.header-hex { text-align: left; }
+
+
+
+/* Editor de paleta */
+#paleta-editor {
+  margin-bottom: 0;
+}
+
+#paleta-editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paleta-color-row {
+  display: grid;
+  grid-template-columns: 80px 50px 50px 50px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.paleta-color-row label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #5f5e5a;
+  margin: 0;
+  width: auto;
+}
+
+.paleta-color-row input[type="color"] {
+  width: 40px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid #cfccc2;
+  border-radius: 6px;
+  cursor: pointer;
+  justify-self: center;
+}
+
+.paleta-color-preview {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 2px solid #cfccc2;
+  justify-self: center;
+  transition: background 0.15s ease;
+}
+
+.paleta-color-hex {
+  font-size: 12px;
+  color: #5f5e5a;
+  font-family: monospace;
+  padding-left: 4px;
+}
+
+#paleta-editor .btn-guardar-paleta {
+  margin-top: 8px;
+  align-self: flex-start;
+}
+
+/* Grid de 3 columnas para configuración global */
+.grid-3-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* Cards */
+.card {
+  background: #fff;
+  border: 1px solid #e2e0d6;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.card-full {
+  width: 100%;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.btn-guardar-card {
+  padding: 6px 16px;
+  font-size: 13px;
+}
+
+/* Header de cards con acciones */
+.card-header-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-header-acciones .guardar-estado {
+  font-size: 13px;
+  color: #2e7d32;
+  font-weight: normal;
+}
+
+/* Estado de guardado en el header */
+.editor-acciones .guardar-estado {
+  display: none !important; /* Oculta el estado del header */
+}
+
+/* Dos columnas: Bloques | Contenido por sección */
+.row-2col {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.card-half {
+  flex: 1;
+}
+
+/* Selector de sección */
+.selector-seccion {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #cfccc2;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.btn-editar-seccion {
+  width: 100%;
+}
+
+/* ============================================
+   MODAL (pop-up) - Responsive y sin scroll
+   ============================================ */
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;  /* ← Cambiado de flex a none */
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;  /* ← Límite de altura, pero sin scroll */
+  overflow-y: auto;  /* ← Scroll solo si es necesario */
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+/* El cuerpo del modal se ajusta al contenido */
+#modal-body {
+  flex: 1;
+  overflow-y: auto;  /* ← Scroll solo en el cuerpo si es necesario */
+  padding: 4px 0;
+}
+
+/* Asegurar que los campos no se desborden */
+#modal-body .campo {
+  margin-bottom: 12px;
+}
+
+#modal-body .campo:last-child {
+  margin-bottom: 0;
+}
+
+/* Estilo para el header del modal */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-shrink: 0;  /* ← Evita que se encoja */
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-cerrar {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #8a8a86;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+/* Footer del modal */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e0d6;
+  flex-shrink: 0;  /* ← Evita que se encoja */
+}
+
+/* ============================================
+   ESTILOS HOVER PARA TODOS LOS BOTONES
+   ============================================ */
+
+/* Botón primario (fondo rojo/marrón) */
+button:not(.btn-secundario):not(.btn-flecha):not(.btn-quitar):not(.btn-agregar):not(.modal-cerrar):hover {
+  background: #7a2e16;
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(153, 60, 29, 0.3);
+}
+
+/* Botón secundario (borde transparente) */
+.btn-secundario:hover {
+  background: #993c1d;
+  color: #fff;
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(153, 60, 29, 0.2);
+}
+
+/* Botones de flecha (↑ ↓) */
+.btn-flecha:hover:not(:disabled) {
+  background: #e2e0d6;
+  transform: scale(1.05);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Botón de quitar (✕) en listas dinámicas */
+.btn-quitar:hover {
+  color: #7a1a1a;
+  transform: scale(1.2);
+}
+
+/* Botón de agregar en listas dinámicas */
+.btn-agregar:hover {
+  background: #e2e0d6;
+  transform: scale(1.02);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Botón de cerrar modal (✕) */
+.modal-cerrar:hover {
+  color: #2c2c2a;
+  transform: scale(1.15);
+}
+
+/* Botones dentro de las filas de cliente (lista) */
+.fila-cliente:hover {
+  background: #faf8f4;
+  border-color: #993c1d;
+  box-shadow: 0 2px 8px rgba(153, 60, 29, 0.1);
+  color: #fff;
+}
+
+.fila-cliente span:hover { color: #fff; }
+
+/* Botón de vista previa (comportamiento mixto) */
+#btn-preview:hover {
+  background: #993c1d;
+  color: #fff;
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(153, 60, 29, 0.2);
+}
+
+#btn-preview:active {
+  transform: scale(0.98);
+}
+
+/* Responsive para tablet y pantallas pequeñas */
+@media (max-width: 768px) {
+  .modal {
+    padding: 10px;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    padding: 16px;
+    max-height: 95vh;
+  }
+
+  .modal-header h3 {
+    font-size: 16px;
+  }
+
+  .modal-cerrar {
+    font-size: 24px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modal-footer button {
+    width: 100%;
+  }
+  
+  .pantalla-ancha { max-width: 99%;}
+  
+  .grid-3-col { display: grid-auto-columns; grid-template-columns: repeat(1, 1fr); gap: 16px;}
+  
+  .paletas-layout {
+    flex-direction: column;
+  }
+  
+  .paletas-lista-col {
+    flex: none;
+    width: 100%;
+    max-height: 300px;
+  }
+  
+  .paleta-color-header {
+    display: none;
+  }
+  
+  .paleta-color-row {
+    grid-template-columns: 70px 40px 36px 36px 1fr;
+    gap: 6px;
+  }
+  
+  .paleta-color-row label {
+    font-size: 11px;
+  }
+  
+  .paleta-color-row input[type="color"] {
+    width: 34px;
+    height: 30px;
+  }
+  
+  .paleta-color-preview {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .paleta-color-hex {
+    font-size: 10px;
+  }
+}

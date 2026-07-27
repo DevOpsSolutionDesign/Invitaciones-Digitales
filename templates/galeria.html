@@ -1,5 +1,25 @@
-<section id="bloque-galeria" class="bloque bloque-galeria">
-  <div class="galeria-carrusel" data-list="fotos">
-    <template><div class="galeria-diapositiva"><img class="galeria-foto" data-src-self alt=""></div></template>
+<section id="bloque-galeria" class="bloque">
+  <div class="galeria-carrusel">
+    <div class="galeria-track" data-list="fotos">
+      <template
+        ><div class="galeria-diapositiva">
+          <img class="galeria-foto" data-src-self alt="" /></div
+      ></template>
+    </div>
+    <button
+      type="button"
+      class="galeria-nav galeria-prev"
+      aria-label="Foto anterior"
+    >
+      ❮
+    </button>
+    <button
+      type="button"
+      class="galeria-nav galeria-next"
+      aria-label="Foto siguiente"
+    >
+      ❯
+    </button>
+    <div class="galeria-dots" data-mantener-vacio></div>
   </div>
 </section>

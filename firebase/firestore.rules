@@ -2,14 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    match /paletas/{paletaId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // 1. Reutilizamos la función de administrador de tu segundo archivo
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.token.email == 'correo_del_admin@tudominio.com';
     }
 
+    // 2. Protegemos el catálogo de paletas
+    match /paletas/{paletaId} {
+      // Cualquiera puede ver el catálogo (get para un item, list para todos)
+      allow read: if true; 
+      // Solo el administrador puede crear, editar o borrar paletas
+      allow write: if isAdmin(); 
+    }
+
+    // 3. Protegemos los datos sensibles de los clientes
     match /clientes/{clienteId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      // Un cliente SOLO puede leer su propia información. El admin puede leer todas.
+      allow read: if (request.auth != null && request.auth.uid == clienteId) || isAdmin();
+      
+      // Solo el administrador puede modificar la base de datos de clientes
+      // (Cambia esto si los clientes necesitan actualizar su propio perfil)
+      allow write: if isAdmin(); 
     }
   }
 }

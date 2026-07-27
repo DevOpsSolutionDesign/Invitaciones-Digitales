@@ -42,37 +42,106 @@
     </section>
 
     <!-- Vista: gestión de paletas -->
-    <section id="vista-paletas" hidden>
-      <div class="lista-header">
-        <h2>Paletas de colores</h2>
-        <div class="lista-header-botones">
-          <button id="btn-volver-desde-paletas" class="btn-secundario">← Volver a clientes</button>
-          <button id="btn-nueva-paleta">+ Nueva paleta</button>
-        </div>
-      </div>
-      <div id="lista-paletas"></div>
-    </section>
+	<section id="vista-paletas" hidden>
+	  <div class="lista-header">
+		<h2>Paletas de colores</h2>
+		<div class="lista-header-botones">
+		  <button id="btn-volver-desde-paletas" class="btn-secundario">← Volver a clientes</button>
+		  <button id="btn-nueva-paleta">+ Nueva paleta</button>
+		</div>
+	  </div>
+	  
+	  <!-- Layout de 2 columnas -->
+	  <div class="paletas-layout">
+		<!-- Columna izquierda: lista de paletas -->
+		<div class="paletas-lista-col">
+		  <div id="lista-paletas"></div>
+		</div>
+		
+		<!-- Columna derecha: editor de paleta -->
+		<div class="paletas-editor-col">
+		  <div id="paleta-editor" class="card" hidden>
+			<div class="card-header">
+			  <h3 id="paleta-editor-titulo">Editar paleta</h3>
+			  <button id="btn-cerrar-paleta" class="modal-cerrar" title="Cerrar">✕</button>
+			</div>
+			<div id="paleta-editor-body"></div>
+		  </div>
+		  <p id="paleta-mensaje" class="paleta-mensaje">Selecciona una paleta para editarla o crea una nueva.</p>
+		</div>
+	  </div>
+	</section>
 
     <!-- Vista: editor de un cliente -->
-    <section id="vista-editor" hidden>
-      <div class="editor-header">
-        <button id="btn-volver-lista" class="btn-secundario">← Volver a clientes</button>
-        <span class="editor-id">ID: <code id="editor-id-cliente"></code></span>
-        <div class="editor-acciones">
-          <button id="btn-preview" class="btn-secundario">Vista previa</button>
-          <button id="btn-guardar">Guardar cambios</button>
-          <span id="guardar-estado" class="guardar-estado" hidden></span>
-        </div>
-      </div>
+	<section id="vista-editor" hidden>
+	  <!-- Header del editor (se mantiene igual) -->
+	  <div class="editor-header">
+		<button id="btn-volver-lista" class="btn-secundario">← Volver a clientes</button>
+		<span class="editor-id">ID: <code id="editor-id-cliente"></code></span>
+		<div class="editor-acciones">
+		  <button id="btn-preview" class="btn-secundario">Vista previa</button>
+		  <!--<button id="btn-guardar">Guardar todos los cambios</button>
+		  <span id="guardar-estado" class="guardar-estado" hidden></span>-->
+		</div>
+	  </div>
 
-      <h3>Configuración global</h3>
-      <div id="form-global" class="form-global"></div>
+	  <!-- Card 1: Configuración Global (100% ancho) -->
+		<div class="card card-full">
+		  <div class="card-header">
+			<h3>Configuración global</h3>
+			<div class="card-header-acciones">
+			  <span id="guardar-estado-global" class="guardar-estado" hidden></span>
+			  <button id="btn-guardar-global" class="btn-guardar-card">Guardar</button>
+			</div>
+		  </div>
+		  <div id="form-global" class="grid-3-col"></div>
+		</div>
 
-      <h3>Contenido por sección</h3>
-      <div id="tabs-secciones" class="tabs"></div>
-      <p id="seccion-ayuda" class="seccion-ayuda-panel" hidden></p>
-      <div id="panel-seccion" class="panel-seccion"></div>
-    </section>
+	  <!-- Dos columnas: Bloques | Contenido por sección -->
+	  <div class="row-2col">
+		<!-- Columna Izquierda: Bloques Activos -->
+		<div class="card card-half">
+		  <div class="card-header">
+			<h3>Bloques activos y su orden</h3>
+			<div class="card-header-acciones">
+			  <span id="guardar-estado-bloques" class="guardar-estado" hidden></span>
+			  <button id="btn-guardar-bloques" class="btn-guardar-card">Guardar</button>
+			</div>
+		  </div>
+		  <div id="rejilla-bloques"></div>
+		</div>
+
+		<!-- Columna Derecha: Contenido por sección -->
+		<div class="card card-half">
+		  <div class="card-header">
+			<h3>Contenido por sección</h3>
+			<div class="card-header-acciones">
+			  <span id="guardar-estado-seccion" class="guardar-estado" hidden></span>
+			</div>
+		  </div>
+		  <select id="selector-seccion" class="selector-seccion">
+			<!-- Se llena desde JS -->
+		  </select>
+		  <button id="btn-editar-seccion" class="btn-editar-seccion">Editar</button>
+		  <p class="seccion-ayuda-panel" id="seccion-ayuda" hidden></p>
+		</div>
+	  </div>
+
+	  <!-- MODAL (pop-up) -->
+	  <div id="modal-seccion" class="modal" hidden>
+		<div class="modal-content">
+		  <div class="modal-header">
+			<h3 id="modal-titulo">Editar sección</h3>
+			<button id="modal-cerrar" class="modal-cerrar">✕</button>
+		  </div>
+		  <div id="modal-body"></div>
+		  <div class="modal-footer">
+			<button id="modal-cancelar" class="btn-secundario">Cancelar</button>
+			<button id="modal-guardar">Guardar</button>
+		  </div>
+		</div>
+	  </div>
+	</section>
   </div>
 
   <script type="module" src="js/admin.js"></script>
