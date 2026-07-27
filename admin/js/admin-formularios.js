@@ -18,26 +18,40 @@ export const BLOQUES = [
   { clave: "regresiva", etiqueta: "Cuenta regresiva" },
   { clave: "musica", etiqueta: "Música (ícono flotante)" },
   { clave: "programa", etiqueta: "Programa" },
-  { clave: "regalos", etiqueta: "Regalos" }
+  { clave: "regalos", etiqueta: "Regalos" },
 ];
 
 // Orden de aparición en la página pública, por defecto. La música no está aquí
 // porque ya no forma parte del flujo — flota sobre toda la página.
 export const ORDEN_DEFECTO = [
-  "portada", "dedicatoria", "nombre", "detalles", "ubicacion",
-  "rsvp", "galeria", "regresiva", "programa", "regalos"
+  "portada",
+  "dedicatoria",
+  "nombre",
+  "detalles",
+  "ubicacion",
+  "rsvp",
+  "galeria",
+  "regresiva",
+  "programa",
+  "regalos",
 ];
 
-import { CATEGORIAS_FUENTES, FUENTES_CATALOGO, NOMBRES_FUENTES_VALIDAS } from "../../js/fuentes.js";
+import {
+  CATEGORIAS_FUENTES,
+  FUENTES_CATALOGO,
+  NOMBRES_FUENTES_VALIDAS,
+} from "../../js/fuentes.js";
 
 export { FUENTES_CATALOGO };
 
 export function construirOpcionesFuentesAgrupadas(valorSeleccionado) {
-  return CATEGORIAS_FUENTES.map((grupo) => `
+  return CATEGORIAS_FUENTES.map(
+    (grupo) => `
     <optgroup label="${grupo.categoria}">
       ${grupo.fuentes.map((f) => `<option value="${f.nombre}" ${valorSeleccionado === f.nombre ? "selected" : ""}>${f.nombre}</option>`).join("")}
     </optgroup>
-  `).join("");
+  `,
+  ).join("");
 }
 
 const PRESETS_TAMANO = ["chico", "mediano", "grande", "extragrande"];
@@ -45,80 +59,133 @@ const PRESETS_TAMANO = ["chico", "mediano", "grande", "extragrande"];
 const ESQUEMA_SECCIONES = {
   portada: {
     campos: [
-      { tipo: "archivo", clave: "foto", etiqueta: "Foto de portada", carpeta: "images" },
-      { tipo: "texto", clave: "etiquetaSuperior", etiqueta: "Etiqueta superior (ej. MIS XV AÑOS)" },
-      { tipo: "texto", clave: "textoCorto", etiqueta: "Texto corto adicional (opcional)" },
-      { tipo: "estilo-campo-global", clave: "nombreFestejado", etiqueta: "Estilo del nombre del festejado/s (arriba a la izquierda)" },
-      { tipo: "estilo-campo-global", clave: "fechaEventoTexto", etiqueta: "Estilo de la fecha del evento" }
-    ]
+      {
+        tipo: "archivo",
+        clave: "foto",
+        etiqueta: "Foto de portada",
+        carpeta: "images",
+      },
+      {
+        tipo: "texto",
+        clave: "etiquetaSuperior",
+        etiqueta: "Etiqueta superior (ej. MIS XV AÑOS)",
+      },
+      {
+        tipo: "texto",
+        clave: "textoCorto",
+        etiqueta: "Texto corto adicional (opcional)",
+      },
+    ],
   },
-  nombre: { 
-	campos: [
-		{ tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" }
-	] },
+  nombre: {
+    campos: [
+      {
+        tipo: "archivo",
+        clave: "imgFondo",
+        etiqueta: "Imagen de fondo",
+        carpeta: "images",
+      },
+    ],
+  },
   dedicatoria: {
     campos: [
-      { tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" }
-    ]
+      {
+        tipo: "archivo",
+        clave: "imgFondo",
+        etiqueta: "Imagen de fondo",
+        carpeta: "images",
+      },
+    ],
   },
   detalles: {
-    ayuda: "Aquí van datos sueltos que no tienen su propio bloque: código de vestimenta, "
-      + "restricciones (ej. \"evento sin niños\"), indicaciones de estacionamiento, hora límite "
-      + "de llegada, etc. Cada entrada se muestra con su título en negrita y el contenido debajo.",
+    ayuda:
+      "Aquí van datos sueltos que no tienen su propio bloque: código de vestimenta, " +
+      'restricciones (ej. "evento sin niños"), indicaciones de estacionamiento, hora límite ' +
+      "de llegada, etc. Cada entrada se muestra con su título en negrita y el contenido debajo.",
     campos: [
-	{tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images"},
-	{tipo: "lista-objeto", clave: "items", etiqueta: "Detalles",
-      subcampos: [
-        { clave: "titulo", etiqueta: "Título (ej. Código de vestimenta)" },
-        { clave: "contenido", etiqueta: "Contenido (ej. Formal)" }
-      ]
-    }]
+      {
+        tipo: "lista-objeto",
+        clave: "items",
+        etiqueta: "Detalles",
+        subcampos: [
+          { clave: "titulo", etiqueta: "Título (ej. Código de vestimenta)" },
+          { clave: "contenido", etiqueta: "Contenido (ej. Formal)" },
+        ],
+      },
+    ],
   },
   ubicacion: {
     campos: [
       { tipo: "texto", clave: "salon.url", etiqueta: "URL del mapa (salón)" },
-      { tipo: "archivo", clave: "salon.foto", etiqueta: "Foto del salón", carpeta: "images" },
+      {
+        tipo: "archivo",
+        clave: "salon.foto",
+        etiqueta: "Foto del salón",
+        carpeta: "images",
+      },
       { tipo: "texto", clave: "templo.url", etiqueta: "URL del mapa (templo)" },
-      { tipo: "archivo", clave: "templo.foto", etiqueta: "Foto del templo", carpeta: "images" }
-    ]
+      {
+        tipo: "archivo",
+        clave: "templo.foto",
+        etiqueta: "Foto del templo",
+        carpeta: "images",
+      },
+    ],
   },
-  rsvp: { campos: [
-	  { tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" }
-	], colorOverride: ["boton"] },
+  rsvp: {
+    campos: [],
+    colorOverride: ["boton"],
+  },
   galeria: {
     campos: [
-      { tipo: "lista-archivo", clave: "fotos", etiqueta: "Fotos de la galería (carrusel)", carpeta: "images" }
-    ]
+      {
+        tipo: "lista-archivo",
+        clave: "fotos",
+        etiqueta: "Fotos de la galería (carrusel)",
+        carpeta: "images",
+      },
+    ],
   },
   regresiva: {
     campos: [
-	{ tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" },
-	{ tipo: "texto", clave: "etiqueta", etiqueta: "Texto de la etiqueta" }
-	]
+      { tipo: "texto", clave: "etiqueta", etiqueta: "Texto de la etiqueta" },
+    ],
   },
   musica: {
     campos: [
-      { tipo: "archivo", clave: "ruta", etiqueta: "Archivo de música", carpeta: "music" },
-      { tipo: "texto", clave: "titulo", etiqueta: "Título (opcional)" }
-    ]
+      {
+        tipo: "archivo",
+        clave: "ruta",
+        etiqueta: "Archivo de música",
+        carpeta: "music",
+      },
+      { tipo: "texto", clave: "titulo", etiqueta: "Título (opcional)" },
+    ],
   },
   programa: {
     campos: [
-	{ tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" },
-	{
-      tipo: "lista-objeto", clave: "eventos", etiqueta: "Eventos del programa",
-      subcampos: [
-        { clave: "hora", etiqueta: "Hora", tipoInput: "time" },
-        { clave: "nombre", etiqueta: "Nombre" },
-        { clave: "descripcion", etiqueta: "Descripción (opcional)" }
-      ]
-    }]
+      {
+        tipo: "lista-objeto",
+        clave: "eventos",
+        etiqueta: "Eventos del programa",
+        subcampos: [
+          { clave: "hora", etiqueta: "Hora", tipoInput: "time" },
+          { clave: "nombre", etiqueta: "Nombre" },
+          { clave: "descripcion", etiqueta: "Descripción (opcional)" },
+        ],
+      },
+    ],
   },
   regalos: {
     campos: [
-      { tipo: "archivo", clave: "imgFondo", etiqueta: "Imagen de fondo", carpeta: "images" }
-    ]
-  }
+      {
+        tipo: "archivo",
+        clave: "imgFondo",
+        etiqueta: "Imagen de fondo",
+        carpeta: "images",
+      },
+    ],
+  },
 };
 
 export function ayudaDeSeccion(nombreSeccion) {
@@ -128,9 +195,13 @@ export function ayudaDeSeccion(nombreSeccion) {
 // --- utilidades de rutas y objetos -----------------------------------------
 
 function slugificar(texto) {
-  return texto.toString().toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return texto
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 function extensionDe(nombreArchivo) {
@@ -144,14 +215,17 @@ function sugerirRuta(carpeta, clienteId, claveCampo, archivo) {
 }
 
 function obtenerProfundo(obj, ruta) {
-  return ruta.split(".").reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
+  return ruta
+    .split(".")
+    .reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
 }
 
 function asignarProfundo(obj, ruta, valor) {
   const partes = ruta.split(".");
   let actual = obj;
   for (let i = 0; i < partes.length - 1; i++) {
-    if (typeof actual[partes[i]] !== "object" || actual[partes[i]] === null) actual[partes[i]] = {};
+    if (typeof actual[partes[i]] !== "object" || actual[partes[i]] === null)
+      actual[partes[i]] = {};
     actual = actual[partes[i]];
   }
   actual[partes[partes.length - 1]] = valor;
@@ -182,15 +256,26 @@ export function crearWidgetArchivo(clienteIdRef, campo, valorActual) {
   inputArchivo.addEventListener("change", () => {
     const archivo = inputArchivo.files[0];
     if (!archivo) return;
-    inputRuta.value = sugerirRuta(campo.carpeta, clienteIdRef.id, campo.clave, archivo);
+    inputRuta.value = sugerirRuta(
+      campo.carpeta,
+      clienteIdRef.id,
+      campo.clave,
+      archivo,
+    );
     if (preview) {
       const lector = new FileReader();
-      lector.onload = (e) => { preview.src = e.target.result; preview.hidden = false; };
+      lector.onload = (e) => {
+        preview.src = e.target.result;
+        preview.hidden = false;
+      };
       lector.readAsDataURL(archivo);
     }
   });
 
-  if (!esAudio && valorActual) { preview.src = valorActual; preview.hidden = false; }
+  if (!esAudio && valorActual) {
+    preview.src = valorActual;
+    preview.hidden = false;
+  }
 
   return wrap;
 }
@@ -225,14 +310,27 @@ function crearWidgetListaArchivo(clienteIdRef, campo, valoresActuales) {
     inputArchivo.addEventListener("change", () => {
       const archivo = inputArchivo.files[0];
       if (!archivo) return;
-      inputRuta.value = sugerirRuta("images", clienteIdRef.id, `${campo.clave}-${contador}`, archivo);
+      inputRuta.value = sugerirRuta(
+        "images",
+        clienteIdRef.id,
+        `${campo.clave}-${contador}`,
+        archivo,
+      );
       const lector = new FileReader();
-      lector.onload = (e) => { preview.src = e.target.result; preview.hidden = false; };
+      lector.onload = (e) => {
+        preview.src = e.target.result;
+        preview.hidden = false;
+      };
       lector.readAsDataURL(archivo);
     });
 
-    if (valor) { preview.src = valor; preview.hidden = false; }
-    fila.querySelector(".btn-quitar").addEventListener("click", () => fila.remove());
+    if (valor) {
+      preview.src = valor;
+      preview.hidden = false;
+    }
+    fila
+      .querySelector(".btn-quitar")
+      .addEventListener("click", () => fila.remove());
     filas.appendChild(fila);
   }
 
@@ -255,10 +353,16 @@ function crearWidgetListaObjeto(campo, valoresActuales) {
   function agregarFila(valores = {}) {
     const fila = document.createElement("div");
     fila.className = "fila-lista fila-objeto";
-    fila.innerHTML = campo.subcampos.map((sc) =>
-      `<input type="${sc.tipoInput || "text"}" data-sub="${sc.clave}" placeholder="${sc.etiqueta}" value="${valores[sc.clave] || ""}">`
-    ).join("") + `<button type="button" class="btn-quitar">✕</button>`;
-    fila.querySelector(".btn-quitar").addEventListener("click", () => fila.remove());
+    fila.innerHTML =
+      campo.subcampos
+        .map(
+          (sc) =>
+            `<input type="${sc.tipoInput || "text"}" data-sub="${sc.clave}" placeholder="${sc.etiqueta}" value="${valores[sc.clave] || ""}">`,
+        )
+        .join("") + `<button type="button" class="btn-quitar">✕</button>`;
+    fila
+      .querySelector(".btn-quitar")
+      .addEventListener("click", () => fila.remove());
     filas.appendChild(fila);
   }
 
@@ -302,7 +406,9 @@ function construirControlesEstilo(tipografiaActual, tamanoActual) {
 function wirearControlesEstilo(wrap) {
   wrap.querySelectorAll(".chk-tipografia, .chk-tamano").forEach((chk) => {
     chk.addEventListener("change", () => {
-      const clase = chk.classList.contains("chk-tipografia") ? "sub-tipografia" : "sub-tamano";
+      const clase = chk.classList.contains("chk-tipografia")
+        ? "sub-tipografia"
+        : "sub-tamano";
       wrap.querySelector(`.${clase}`).hidden = !chk.checked;
     });
   });
@@ -325,14 +431,22 @@ function leerControlesEstilo(wrap) {
   const resultado = {};
   if (wrap.querySelector(".chk-tipografia").checked) {
     const catalogo = wrap.querySelector(".sel-fuente-catalogo").value;
-    const personalizada = wrap.querySelector(".txt-fuente-personalizada").value.trim();
-    if (personalizada) resultado.tipografia = { origen: "personalizada", valor: personalizada };
-    else if (catalogo) resultado.tipografia = { origen: "catalogo", valor: catalogo };
+    const personalizada = wrap
+      .querySelector(".txt-fuente-personalizada")
+      .value.trim();
+    if (personalizada)
+      resultado.tipografia = { origen: "personalizada", valor: personalizada };
+    else if (catalogo)
+      resultado.tipografia = { origen: "catalogo", valor: catalogo };
   }
   if (wrap.querySelector(".chk-tamano").checked) {
     const exacto = wrap.querySelector(".num-tamano-exacto").value;
     if (exacto) resultado.tamano = { modo: "exacto", px: Number(exacto) };
-    else resultado.tamano = { modo: "preset", valor: wrap.querySelector(".sel-tamano-preset").value };
+    else
+      resultado.tamano = {
+        modo: "preset",
+        valor: wrap.querySelector(".sel-tamano-preset").value,
+      };
   }
   return resultado;
 }
@@ -341,27 +455,34 @@ function leerControlesEstilo(wrap) {
 function crearWidgetEstiloSeccion(seccionCfg, incluyeColorBoton) {
   const wrap = document.createElement("div");
   wrap.className = "widget-estilo";
-  const colorActual = (seccionCfg.colorOverride && seccionCfg.colorOverride.boton) || "";
+  const colorActual =
+    (seccionCfg.colorOverride && seccionCfg.colorOverride.boton) || "";
 
   wrap.innerHTML = `
     <details>
       <summary>Personalizar estilo general de esta sección (opcional)</summary>
       ${construirControlesEstilo(seccionCfg.tipografia, seccionCfg.tamano)}
-      ${incluyeColorBoton ? `
+      ${
+        incluyeColorBoton
+          ? `
       <label class="chk">
         <input type="checkbox" class="chk-color" ${colorActual ? "checked" : ""}>
         Color propio del botón
       </label>
       <div class="sub-color" ${colorActual ? "" : "hidden"}>
         <input type="color" class="color-boton" value="${colorActual || "#8B2E2E"}">
-      </div>` : ""}
+      </div>`
+          : ""
+      }
     </details>
   `;
   wirearControlesEstilo(wrap);
 
   const chkColor = wrap.querySelector(".chk-color");
   if (chkColor) {
-    chkColor.addEventListener("change", () => { wrap.querySelector(".sub-color").hidden = !chkColor.checked; });
+    chkColor.addEventListener("change", () => {
+      wrap.querySelector(".sub-color").hidden = !chkColor.checked;
+    });
   }
   return wrap;
 }
@@ -370,7 +491,9 @@ function leerWidgetEstiloSeccion(wrap) {
   const resultado = leerControlesEstilo(wrap);
   const chkColor = wrap.querySelector(".chk-color");
   if (chkColor && chkColor.checked) {
-    resultado.colorOverride = { boton: wrap.querySelector(".color-boton").value };
+    resultado.colorOverride = {
+      boton: wrap.querySelector(".color-boton").value,
+    };
   }
   return resultado;
 }
@@ -405,9 +528,23 @@ function crearCampo(clienteIdRef, campo, datosActuales, datosEstiloActuales) {
     wrap.appendChild(crearWidgetEstiloCampo(datosEstiloActuales[campo.clave]));
     return wrap;
   }
-  if (campo.tipo === "archivo") return crearWidgetArchivo(clienteIdRef, campo, obtenerProfundo(datosActuales, campo.clave));
-  if (campo.tipo === "lista-archivo") return crearWidgetListaArchivo(clienteIdRef, campo, obtenerProfundo(datosActuales, campo.clave));
-  if (campo.tipo === "lista-objeto") return crearWidgetListaObjeto(campo, obtenerProfundo(datosActuales, campo.clave));
+  if (campo.tipo === "archivo")
+    return crearWidgetArchivo(
+      clienteIdRef,
+      campo,
+      obtenerProfundo(datosActuales, campo.clave),
+    );
+  if (campo.tipo === "lista-archivo")
+    return crearWidgetListaArchivo(
+      clienteIdRef,
+      campo,
+      obtenerProfundo(datosActuales, campo.clave),
+    );
+  if (campo.tipo === "lista-objeto")
+    return crearWidgetListaObjeto(
+      campo,
+      obtenerProfundo(datosActuales, campo.clave),
+    );
 
   const valor = obtenerProfundo(datosActuales, campo.clave);
   const wrap = document.createElement("div");
@@ -430,25 +567,41 @@ function crearCampo(clienteIdRef, campo, datosActuales, datosEstiloActuales) {
 
 function leerCampo(el, campo, destino) {
   if (campo.tipo === "lista-archivo") {
-    const valores = Array.from(el.querySelectorAll(".fila-archivo .archivo-ruta")).map((i) => i.value.trim()).filter(Boolean);
+    const valores = Array.from(
+      el.querySelectorAll(".fila-archivo .archivo-ruta"),
+    )
+      .map((i) => i.value.trim())
+      .filter(Boolean);
     asignarProfundo(destino, campo.clave, valores);
     return;
   }
   if (campo.tipo === "lista-objeto") {
-    const valores = Array.from(el.querySelectorAll(".fila-objeto")).map((fila) => {
-      const obj = {};
-      fila.querySelectorAll("[data-sub]").forEach((i) => { obj[i.dataset.sub] = i.value.trim(); });
-      return obj;
-    }).filter((obj) => Object.values(obj).some(Boolean));
+    const valores = Array.from(el.querySelectorAll(".fila-objeto"))
+      .map((fila) => {
+        const obj = {};
+        fila.querySelectorAll("[data-sub]").forEach((i) => {
+          obj[i.dataset.sub] = i.value.trim();
+        });
+        return obj;
+      })
+      .filter((obj) => Object.values(obj).some(Boolean));
     asignarProfundo(destino, campo.clave, valores);
     return;
   }
   if (campo.tipo === "archivo") {
-    asignarProfundo(destino, campo.clave, el.querySelector(".archivo-ruta").value.trim());
+    asignarProfundo(
+      destino,
+      campo.clave,
+      el.querySelector(".archivo-ruta").value.trim(),
+    );
     return;
   }
   if (campo.tipo === "booleano") {
-    asignarProfundo(destino, campo.clave, el.querySelector('input[type="checkbox"]').checked);
+    asignarProfundo(
+      destino,
+      campo.clave,
+      el.querySelector('input[type="checkbox"]').checked,
+    );
     return;
   }
   const input = el.querySelector("input, textarea");
@@ -457,7 +610,12 @@ function leerCampo(el, campo, destino) {
 
 // --- API pública: render y lectura de una sección completa ------------------
 
-export function renderSeccion(contenedor, clienteIdRef, nombreSeccion, seccionCfgActual) {
+export function renderSeccion(
+  contenedor,
+  clienteIdRef,
+  nombreSeccion,
+  seccionCfgActual,
+) {
   contenedor.innerHTML = "";
   const esquema = ESQUEMA_SECCIONES[nombreSeccion];
   const datosActuales = seccionCfgActual.datos || {};
@@ -471,10 +629,15 @@ export function renderSeccion(contenedor, clienteIdRef, nombreSeccion, seccionCf
   }
 
   esquema.campos.forEach((campo) => {
-    contenedor.appendChild(crearCampo(clienteIdRef, campo, datosActuales, datosEstiloActuales));
+    contenedor.appendChild(
+      crearCampo(clienteIdRef, campo, datosActuales, datosEstiloActuales),
+    );
   });
 
-  const widgetEstilo = crearWidgetEstiloSeccion(seccionCfgActual, Boolean(esquema.colorOverride));
+  const widgetEstilo = crearWidgetEstiloSeccion(
+    seccionCfgActual,
+    Boolean(esquema.colorOverride),
+  );
   contenedor.appendChild(widgetEstilo);
   contenedor._widgetEstilo = widgetEstilo;
   contenedor._esquema = esquema;
