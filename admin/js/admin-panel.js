@@ -44,6 +44,8 @@ const guardarEstadoSeccion = document.getElementById("guardar-estado-seccion");
 const TAMANOS = ["chico", "mediano", "grande", "extragrande"];
 
 let paletasCache = [];
+// Variables globales para usar en admin-formularios.js
+window.paletasCache = paletasCache;
 const clienteIdRef = { id: null };
 let clienteActual = {};
 let ordenBloquesActual = [...ORDEN_DEFECTO];
@@ -292,6 +294,9 @@ function abrirEditor() {
   modal.style.display = "none";
   document.getElementById("modal-body").innerHTML = "";
 
+  window.clienteActual = clienteActual;
+  window.paletasCache = paletasCache;
+
   ordenBloquesActual =
     clienteActual.ordenBloques && clienteActual.ordenBloques.length
       ? [...clienteActual.ordenBloques]
@@ -342,9 +347,21 @@ function renderFormularioGlobal() {
         ${TAMANOS.map((p) => `<option value="${p}" ${eg.tamano && eg.tamano.modo === "preset" && eg.tamano.valor === p ? "selected" : ""}>${p}</option>`).join("")}
       </select>
     </div>
-    <div id="g-fondo-wrap" class="campo"></div>    
+    <div id="g-fondo-wrap" class="campo"></div>
+    <div id="g-favicon-wrap" class="campo"></div>    
   `;
-
+  const faviconWrap = document.getElementById("g-favicon-wrap");
+  faviconWrap.appendChild(
+    crearWidgetArchivo(
+      clienteIdRef,
+      {
+        clave: "favicon",
+        etiqueta: "Favicon (icono de pestaña)",
+        carpeta: "images",
+      },
+      c.favicon,
+    ),
+  );
   const fondoWrap = document.getElementById("g-fondo-wrap");
   fondoWrap.appendChild(
     crearWidgetArchivo(
@@ -456,6 +473,9 @@ function leerFormularioGlobal() {
         valor: document.getElementById("g-tamanoPreset").value,
       },
     },
+    favicon:
+      document.querySelector("#g-favicon-wrap .archivo-ruta").value.trim() ||
+      null,
   };
 }
 

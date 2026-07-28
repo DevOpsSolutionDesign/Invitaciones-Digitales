@@ -116,6 +116,8 @@ const ESQUEMA_SECCIONES = {
   },
   ubicacion: {
     campos: [
+      { tipo: "booleano", clave: "mostrarTemplo", etiqueta: "Mostrar Templo" },
+      { tipo: "booleano", clave: "mostrarSalon", etiqueta: "Mostrar Salón" },
       { tipo: "texto", clave: "salon.url", etiqueta: "URL del mapa (salón)" },
       {
         tipo: "archivo",
@@ -149,6 +151,11 @@ const ESQUEMA_SECCIONES = {
   regresiva: {
     campos: [
       { tipo: "texto", clave: "etiqueta", etiqueta: "Texto de la etiqueta" },
+      {
+        tipo: "color",
+        clave: "colorNumeros",
+        etiqueta: "Color de los números del contador",
+      },
     ],
   },
   musica: {
@@ -559,6 +566,68 @@ function crearCampo(clienteIdRef, campo, datosActuales, datosEstiloActuales) {
     wrap.innerHTML = `<label>${campo.etiqueta}</label><textarea rows="3">${valor || ""}</textarea>`;
     return wrap;
   }
+  if (campo.tipo === "color") {
+    const valorActual = obtenerProfundo(datosActuales, campo.clave) || "";
+    const wrap = document.createElement("div");
+    wrap.className = "campo campo-color-paleta";
+    wrap.dataset.clave = campo.clave;
+
+    // Obtener la paleta actual del cliente
+    const paletaId = window.clienteActual?.paletaId || null;
+    const paleta = window.paletasCache?.find((p) => p.id === paletaId);
+    const colores = paleta?.colores || {};
+
+    let html = `<label>${campo.etiqueta}</label>`;
+    html += `<div class="color-paleta-opciones">`;
+
+    // Mostrar colores de la paleta como opciones
+    const colorKeys = ["primario", "secundario", "acento", "texto", "fondo"];
+    let tieneSeleccionado = false;
+
+    colorKeys.forEach((key) => {
+      if (colores[key]) {
+        const isSelected = valorActual === colores[key];
+        if (isSelected) tieneSeleccionado = true;
+        html += `
+        <button type="button" class="color-paleta-btn ${isSelected ? "activo" : ""}" 
+                data-color="${colores[key]}" 
+                style="background:${colores[key]}; width:32px; height:32px; border-radius:50%; border:2px solid ${isSelected ? "#993c1d" : "#cfccc2"}; cursor:pointer;"
+                title="${key}: ${colores[key]}">
+        </button>
+      `;
+      }
+    });
+
+    // Si no hay colores en la paleta, mostrar mensaje
+    if (Object.keys(colores).length === 0) {
+      html += `<span style="font-size:12px; color:#8a8a86;">No hay colores en la paleta seleccionada</span>`;
+    }
+
+    html += `</div>`;
+    html += `<input type="hidden" class="color-selected-value" value="${valorActual}">`;
+
+    wrap.innerHTML = html;
+
+    // Event listeners para los botones de paleta
+    wrap.querySelectorAll(".color-paleta-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const color = btn.dataset.color;
+
+        // Actualizar selección visual
+        wrap.querySelectorAll(".color-paleta-btn").forEach((b) => {
+          b.classList.remove("activo");
+          b.style.borderColor = "#cfccc2";
+        });
+        btn.classList.add("activo");
+        btn.style.borderColor = "#993c1d";
+
+        // Guardar valor
+        wrap.querySelector(".color-selected-value").value = color;
+      });
+    });
+
+    return wrap;
+  }
   // "texto" (por defecto): input + widget de estilo propio automático
   wrap.innerHTML = `<label>${campo.etiqueta}</label><input type="text" value="${valor || ""}">`;
   wrap.appendChild(crearWidgetEstiloCampo(datosEstiloActuales[campo.clave]));
@@ -602,6 +671,11 @@ function leerCampo(el, campo, destino) {
       campo.clave,
       el.querySelector('input[type="checkbox"]').checked,
     );
+    return;
+  }
+  if (campo.tipo === "color") {
+    const hiddenInput = el.querySelector(".color-selected-value");
+    if (hiddenInput) asignarProfundo(destino, campo.clave, hiddenInput.value);
     return;
   }
   const input = el.querySelector("input, textarea");
