@@ -73,6 +73,9 @@ async function init() {
 
   const cliente = clienteSnap.data();
 
+  // Aplicar favicon
+  aplicarFavicon(cliente);
+
   if (cliente.paletaId) {
     const paletaSnap = await getDoc(doc(db, "paletas", cliente.paletaId));
     if (paletaSnap.exists()) aplicarPaleta(paletaSnap.data().colores);
@@ -80,11 +83,36 @@ async function init() {
 
   aplicarFondo(cliente);
 
+  function aplicarFavicon(cliente) {
+    if (!cliente.favicon) return;
+
+    // Buscar si ya existe un favicon
+    let link = document.querySelector("link[rel='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+
+    // Determinar el tipo de archivo por extensión
+    const extension = cliente.favicon.split(".").pop().toLowerCase();
+    const tipos = {
+      ico: "image/x-icon",
+      png: "image/png",
+      svg: "image/svg+xml",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      webp: "image/webp",
+    };
+    link.type = tipos[extension] || "image/x-icon";
+    link.href = cliente.favicon;
+  }
+
   if (cliente.fechaEvento) {
     cliente.fechaEventoTexto = formatearFecha(cliente.fechaEvento);
   }
 
-  if (cliente.nombreFestejado) document.title = cliente.nombreFestejado;
+  if (cliente.nombreFestejado) document.title = cliente.nombreFestejado; //aqui se agrega el titulo de la pagina
 
   renderHeaderFijo(cliente);
 
@@ -205,6 +233,22 @@ async function renderBloque(nombre, cliente, contenedor) {
     seccionCfg.datosEstilo || {},
   );
   bindListas(seccionEl, seccionCfg.datos || {});
+  // === NUEVO: Lógica específica para ubicación ===
+  if (nombre === "ubicacion") {
+    const datos = seccionCfg.datos || {};
+
+    // Ocultar Templo si no está marcado
+    if (datos.mostrarTemplo === false) {
+      const temploEl = seccionEl.querySelector('[data-mostrar="templo"]');
+      if (temploEl) temploEl.remove();
+    }
+
+    // Ocultar Salón si no está marcado
+    if (datos.mostrarSalon === false) {
+      const salonEl = seccionEl.querySelector('[data-mostrar="salon"]');
+      if (salonEl) salonEl.remove();
+    }
+  }
 
   podarVacios(seccionEl);
 
@@ -408,6 +452,17 @@ function activarRegresiva(seccionEl, cliente) {
   const elSeg = seccionEl.querySelector("#regresiva-seg");
   const elContador = seccionEl.querySelector("#regresiva-contador");
   if (!elDias) return;
+
+  // Obtener el color personalizado de los números
+  const seccionCfg = (cliente.secciones && cliente.secciones.regresiva) || {};
+  const colorNumeros = seccionCfg.datos && seccionCfg.datos.colorNumeros;
+
+  // Aplicar color si existe
+  if (colorNumeros) {
+    [elDias, elHoras, elMin, elSeg].forEach((el) => {
+      if (el) el.style.color = colorNumeros;
+    });
+  }
 
   let intervalo;
   function actualizar() {
