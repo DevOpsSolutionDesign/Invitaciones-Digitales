@@ -1,5 +1,4 @@
-// main.js
-// Motor de renderizado de la invitación pública.
+// main.js — Motor de renderizado optimizado (Plan Spark & Seguridad XSS)
 
 import { fallbackDe } from "./fuentes.js";
 import { db } from "./firebase-init.js";
@@ -24,18 +23,8 @@ const ORDEN_DEFECTO = [
 const PRESET_TAMANOS = { chico: 14, mediano: 18, grande: 24, extragrande: 32 };
 
 const MESES = [
-  "ENERO",
-  "FEBRERO",
-  "MARZO",
-  "ABRIL",
-  "MAYO",
-  "JUNIO",
-  "JULIO",
-  "AGOSTO",
-  "SEPTIEMBRE",
-  "OCTUBRE",
-  "NOVIEMBRE",
-  "DICIEMBRE",
+  "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+  "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE",
 ];
 
 async function init() {
@@ -44,75 +33,61 @@ async function init() {
   const clienteId = params.get("id");
 
   if (!clienteId) {
-    mostrarError(
-      contenedor,
-      "Falta el identificador de la invitación en el enlace.",
-    );
+    mostrarError(contenedor, "Falta el identificador de la invitación en el enlace.");
     return;
   }
 
-  let clienteSnap;
-  try {
-    clienteSnap = await getDoc(doc(db, "clientes", clienteId));
-  } catch (err) {
-    mostrarError(
-      contenedor,
-      "No pudimos cargar la invitación. Intenta de nuevo más tarde.",
-    );
-    console.error(err);
-    return;
+  // --- OPTIMIZACIÓN SPARK: CACHÉ LOCAL EN SESSIONSTORAGE ---
+  // Evita gastar lecturas repetidas de Firestore si el usuario recarga la página.
+  const cacheKey = `invitacion_${clienteId}`;
+  let cliente = null;
+  let paletaColores = null;
+
+  const cachedData = sessionStorage.getItem(cacheKey);
+  if (cachedData) {
+    const parsed = JSON.parse(cachedData);
+    cliente = parsed.cliente;
+    paletaColores = parsed.paletaColores;
+  } else {
+    try {
+      const clienteSnap = await getDoc(doc(db, "clientes", clienteId));
+      if (!clienteSnap.exists()) {
+        mostrarError(contenedor, "No encontramos esta invitación. Verifica el enlace.");
+        return;
+      }
+      cliente = clienteSnap.data();
+
+      // Convertir Timestamp de Firestore a string ISO si existe para poder guardarlo en sessionStorage
+      if (cliente.fechaEvento && cliente.fechaEvento.toDate) {
+        cliente.fechaEventoIso = cliente.fechaEvento.toDate().toISOString();
+      }
+
+      if (cliente.paletaId) {
+        const paletaSnap = await getDoc(doc(db, "paletas", cliente.paletaId));
+        if (paletaSnap.exists()) {
+          paletaColores = paletaSnap.data().colores;
+        }
+      }
+
+      // Guardar en caché de sesión
+      sessionStorage.setItem(cacheKey, JSON.stringify({ cliente, paletaColores }));
+    } catch (err) {
+      mostrarError(contenedor, "No pudimos cargar la invitación. Intenta de nuevo más tarde.");
+      console.error(err);
+      return;
+    }
   }
 
-  if (!clienteSnap.exists()) {
-    mostrarError(
-      contenedor,
-      "No encontramos esta invitación. Verifica el enlace.",
-    );
-    return;
+  // Restaurar objeto fecha si vino de caché
+  if (cliente.fechaEventoIso) {
+    cliente.fechaEvento = new Date(cliente.fechaEventoIso);
   }
 
-  const cliente = clienteSnap.data();
-
-  // Aplicar favicon
   aplicarFavicon(cliente);
-
-  if (cliente.paletaId) {
-    const paletaSnap = await getDoc(doc(db, "paletas", cliente.paletaId));
-    if (paletaSnap.exists()) aplicarPaleta(paletaSnap.data().colores);
-  }
-
+  if (paletaColores) aplicarPaleta(paletaColores);
   aplicarFondo(cliente);
 
-  function aplicarFavicon(cliente) {
-    if (!cliente.favicon) return;
-
-    // Buscar si ya existe un favicon
-    let link = document.querySelector("link[rel='icon']");
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "icon";
-      document.head.appendChild(link);
-    }
-
-    // Determinar el tipo de archivo por extensión
-    const extension = cliente.favicon.split(".").pop().toLowerCase();
-    const tipos = {
-      ico: "image/x-icon",
-      png: "image/png",
-      svg: "image/svg+xml",
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      webp: "image/webp",
-    };
-    link.type = tipos[extension] || "image/x-icon";
-    link.href = cliente.favicon;
-  }
-
-  if (cliente.fechaEvento) {
-    cliente.fechaEventoTexto = formatearFecha(cliente.fechaEvento);
-  }
-
-  if (cliente.nombreFestejado) document.title = cliente.nombreFestejado; //aqui se agrega el titulo de la pagina
+  if (cliente.nombreFestejado) document.title = cliente.nombreFestejado;
 
   renderHeaderFijo(cliente);
 
@@ -120,19 +95,72 @@ async function init() {
     cliente.ordenBloques && cliente.ordenBloques.length
       ? cliente.ordenBloques
       : ORDEN_DEFECTO;
-  for (const bloque of orden) {
-    if (!cliente.bloquesActivos || !cliente.bloquesActivos[bloque]) continue;
-    await renderBloque(bloque, cliente, contenedor);
+
+  // --- OPTIMIZACIÓN RED: CARGA EN PARALELO DE TEMPLATES (Promise.all) ---
+  // En lugar de hacer fetch uno por uno en fila india, descargamos todos los bloques activos de un solo trancazo.
+  const bloquesActivos = orden.filter(
+    (bloque) => cliente.bloquesActivos && cliente.bloquesActivos[bloque]
+  );
+
+  const promesasTemplates = bloquesActivos.map(async (nombre) => {
+    try {
+      const resp = await fetch(`templates/${nombre}.html`);
+      if (!resp.ok) return { nombre, html: null };
+      const html = await resp.text();
+      return { nombre, html };
+    } catch (err) {
+      console.error(`No se pudo cargar el bloque "${nombre}"`, err);
+      return { nombre, html: null };
+    }
+  });
+
+  // Si la música está activa, también precargamos su template en paralelo
+  let promesaMusica = null;
+  if (cliente.bloquesActivos && cliente.bloquesActivos.musica) {
+    promesaMusica = fetch("templates/musica.html")
+      .then((r) => (r.ok ? r.text() : null))
+      .catch(() => null);
   }
 
-  // La música no es un bloque del flujo: es un ícono flotante independiente.
-  if (cliente.bloquesActivos && cliente.bloquesActivos.musica) {
-    await renderMusicaFlotante(cliente);
+  const resultadosTemplates = await Promise.all(promesasTemplates);
+  const htmlMusica = promesaMusica ? await promesaMusica : null;
+
+  // Renderizar bloques en el orden correcto
+  for (const item of resultadosTemplates) {
+    if (item.html) {
+      renderizarYAcoplarBloque(item.nombre, item.html, cliente, contenedor);
+    }
+  }
+
+  // Renderizar música flotante si cargó bien
+  if (htmlMusica) {
+    renderizarMusicaFlotante(htmlMusica, cliente);
   }
 }
 
+function aplicarFavicon(cliente) {
+  if (!cliente.favicon) return;
+  let link = document.querySelector("link[rel='icon']");
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+  const extension = cliente.favicon.split(".").pop().toLowerCase();
+  const tipos = {
+    ico: "image/x-icon",
+    png: "image/png",
+    svg: "image/svg+xml",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+  };
+  link.type = tipos[extension] || "image/x-icon";
+  link.href = cliente.favicon;
+}
+
 function formatearFecha(ts) {
-  const fecha = ts.toDate ? ts.toDate() : new Date(ts);
+  const fecha = ts instanceof Date ? ts : (ts.toDate ? ts.toDate() : new Date(ts));
   const dia = String(fecha.getDate()).padStart(2, "0");
   return `${dia}-${MESES[fecha.getMonth()]}-${fecha.getFullYear()}`;
 }
@@ -165,29 +193,16 @@ function aplicarFondo(cliente) {
   document.body.style.backgroundPosition = "center";
 }
 
-// --- header fijo -------------------------------------------------------
-
 function renderHeaderFijo(cliente) {
   if (!cliente.headerTexto) return;
   const header = document.createElement("header");
   header.id = "header-fijo";
+  // --- BLINDAJE XSS: textContent en lugar de innerHTML ---
   header.textContent = cliente.headerTexto;
   document.body.insertBefore(header, document.body.firstChild);
 }
 
-// --- música flotante -----------------------------------------------------
-
-async function renderMusicaFlotante(cliente) {
-  let html;
-  try {
-    const resp = await fetch("templates/musica.html");
-    if (!resp.ok) return;
-    html = await resp.text();
-  } catch (err) {
-    console.error("No se pudo cargar el bloque de música", err);
-    return;
-  }
-
+function renderizarMusicaFlotante(html, cliente) {
   const envoltorio = document.createElement("div");
   envoltorio.innerHTML = html.trim();
   const el = envoltorio.firstElementChild;
@@ -205,19 +220,7 @@ async function renderMusicaFlotante(cliente) {
   activarMusica(el);
 }
 
-// --- render de un bloque normal -------------------------------------------
-
-async function renderBloque(nombre, cliente, contenedor) {
-  let html;
-  try {
-    const resp = await fetch(`templates/${nombre}.html`);
-    if (!resp.ok) return;
-    html = await resp.text();
-  } catch (err) {
-    console.error(`No se pudo cargar el bloque "${nombre}"`, err);
-    return;
-  }
-
+function renderizarYAcoplarBloque(nombre, html, cliente, contenedor) {
   const envoltorio = document.createElement("div");
   envoltorio.innerHTML = html.trim();
   const seccionEl = envoltorio.firstElementChild;
@@ -226,24 +229,15 @@ async function renderBloque(nombre, cliente, contenedor) {
   const seccionCfg = (cliente.secciones && cliente.secciones[nombre]) || {};
 
   aplicarEstiloSeccion(seccionEl, cliente.estiloGlobal, seccionCfg);
-  bindCampos(
-    seccionEl,
-    seccionCfg.datos || {},
-    cliente,
-    seccionCfg.datosEstilo || {},
-  );
+  bindCampos(seccionEl, seccionCfg.datos || {}, cliente, seccionCfg.datosEstilo || {});
   bindListas(seccionEl, seccionCfg.datos || {});
-  // === NUEVO: Lógica específica para ubicación ===
+
   if (nombre === "ubicacion") {
     const datos = seccionCfg.datos || {};
-
-    // Ocultar Templo si no está marcado
     if (datos.mostrarTemplo === false) {
       const temploEl = seccionEl.querySelector('[data-mostrar="templo"]');
       if (temploEl) temploEl.remove();
     }
-
-    // Ocultar Salón si no está marcado
     if (datos.mostrarSalon === false) {
       const salonEl = seccionEl.querySelector('[data-mostrar="salon"]');
       if (salonEl) salonEl.remove();
@@ -251,7 +245,6 @@ async function renderBloque(nombre, cliente, contenedor) {
   }
 
   podarVacios(seccionEl);
-
   if (!tieneContenido(seccionEl)) return;
 
   contenedor.appendChild(seccionEl);
@@ -261,29 +254,23 @@ async function renderBloque(nombre, cliente, contenedor) {
   if (nombre === "galeria") activarGaleria(seccionEl);
 }
 
-// --- data binding genérico -------------------------------------------------
-
-function resolverValor(obj, path) {
-  if (!obj || !path) return undefined;
-  return path
-    .split(".")
-    .reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
-}
-
+// --- BLINDAJE XSS: ASIGNACIÓN SEGURA DE VALORES ---
 function asignarValor(el, valor) {
   if (valor === undefined || valor === null || valor === "") {
     el.remove();
     return;
   }
   const tag = el.tagName;
-  if (tag === "IMG" || tag === "AUDIO" || tag === "SOURCE") el.src = valor;
-  else if (tag === "A") el.href = valor;
-  else el.textContent = valor;
+  if (tag === "IMG" || tag === "AUDIO" || tag === "SOURCE") {
+    el.src = valor;
+  } else if (tag === "A") {
+    el.href = valor;
+  } else {
+    // Usamos textContent para neutralizar cualquier intento de inyección HTML/Script (XSS)
+    el.textContent = valor;
+  }
 }
 
-// Aplica el estilo de campo individual (si existe) directamente como estilo
-// en línea sobre el elemento — el nivel más específico de la cascada:
-// campo > sección > global.
 function aplicarEstiloCampo(el, clave, datosEstiloSeccion) {
   const override = datosEstiloSeccion && datosEstiloSeccion[clave];
   if (!override) return;
@@ -316,10 +303,7 @@ function bindCampos(seccionEl, datos, cliente, datosEstiloSeccion) {
 
 function bindListas(seccionEl, datos) {
   seccionEl.querySelectorAll("[data-list]").forEach((contenedorLista) => {
-    const items = resolverValor(
-      datos,
-      contenedorLista.getAttribute("data-list"),
-    );
+    const items = resolverValor(datos, contenedorLista.getAttribute("data-list"));
     const plantilla = contenedorLista.querySelector("template");
     if (!plantilla || !Array.isArray(items)) {
       if (plantilla) plantilla.remove();
@@ -337,12 +321,18 @@ function bindListas(seccionEl, datos) {
           ? raiz
           : raiz.querySelector("[data-src-self]");
         if (destino) destino.src = item;
+        // Blindado contra XSS también aquí en listas planas
         else raiz.textContent = item;
       }
       contenedorLista.appendChild(clon);
     });
     plantilla.remove();
   });
+}
+
+function resolverValor(obj, path) {
+  if (!obj || !path) return undefined;
+  return path.split(".").reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
 }
 
 function podarVacios(seccionEl) {
@@ -364,24 +354,19 @@ function podarVacios(seccionEl) {
 function tieneContenido(seccionEl) {
   const conTexto = seccionEl.textContent.trim().length > 0;
   const conMedia = seccionEl.querySelector("img[src], audio[src]");
-  const conFormulario = seccionEl.querySelector(
-    "input, form, button, select, textarea",
-  );
+  const conFormulario = seccionEl.querySelector("input, form, button, select, textarea");
   return conTexto || Boolean(conMedia) || Boolean(conFormulario);
 }
 
-// --- herencia de estilo a nivel sección (estiloGlobal + override) ----------
-
 function aplicarEstiloSeccion(seccionEl, estiloGlobal, seccionCfg) {
-  const tipografia =
-    seccionCfg.tipografia || (estiloGlobal && estiloGlobal.tipografia);
+  const tipografia = seccionCfg.tipografia || (estiloGlobal && estiloGlobal.tipografia);
   const tamano = seccionCfg.tamano || (estiloGlobal && estiloGlobal.tamano);
 
   if (tipografia && tipografia.valor) {
     cargarFuenteGoogle(tipografia.valor);
     seccionEl.style.setProperty(
       "--fuente-seccion",
-      `'${tipografia.valor}', ${fallbackDe(tipografia.valor)}`,
+      `'${tipografia.valor}', ${fallbackDe(tipografia.valor)}`
     );
   }
   if (tamano) {
@@ -398,8 +383,6 @@ function aplicarEstiloSeccion(seccionEl, estiloGlobal, seccionCfg) {
   }
 }
 
-// --- comportamiento por bloque ----------------------------------------------
-
 function activarRSVP(seccionEl, cliente) {
   const form = seccionEl.querySelector("#form-rsvp");
   if (!form) return;
@@ -407,10 +390,7 @@ function activarRSVP(seccionEl, cliente) {
   form.addEventListener("submit", (evento) => {
     evento.preventDefault();
     const familia = seccionEl.querySelector("#rsvp-familia").value.trim();
-    const cantidad = parseInt(
-      seccionEl.querySelector("#rsvp-cantidad").value,
-      10,
-    );
+    const cantidad = parseInt(seccionEl.querySelector("#rsvp-cantidad").value, 10);
     if (!familia || !cantidad || cantidad < 1) return;
 
     const personas = cantidad === 1 ? "persona" : "personas";
@@ -442,9 +422,9 @@ function activarMusica(el) {
 
 function activarRegresiva(seccionEl, cliente) {
   if (!cliente.fechaEvento) return;
-  const fechaEvento = cliente.fechaEvento.toDate
-    ? cliente.fechaEvento.toDate()
-    : new Date(cliente.fechaEvento);
+  const fechaEvento = cliente.fechaEvento instanceof Date
+    ? cliente.fechaEvento
+    : (cliente.fechaEvento.toDate ? cliente.fechaEvento.toDate() : new Date(cliente.fechaEvento));
 
   const elDias = seccionEl.querySelector("#regresiva-dias");
   const elHoras = seccionEl.querySelector("#regresiva-horas");
@@ -453,11 +433,9 @@ function activarRegresiva(seccionEl, cliente) {
   const elContador = seccionEl.querySelector("#regresiva-contador");
   if (!elDias) return;
 
-  // Obtener el color personalizado de los números
   const seccionCfg = (cliente.secciones && cliente.secciones.regresiva) || {};
   const colorNumeros = seccionCfg.datos && seccionCfg.datos.colorNumeros;
 
-  // Aplicar color si existe
   if (colorNumeros) {
     [elDias, elHoras, elMin, elSeg].forEach((el) => {
       if (el) el.style.color = colorNumeros;
@@ -493,7 +471,6 @@ function activarGaleria(seccionEl) {
   const btnNext = seccionEl.querySelector(".galeria-next");
 
   if (!track || diapositivas.length <= 1) {
-    // Sin fotos, o con una sola: no tiene sentido mostrar flechas/puntos/autoplay
     if (btnPrev) btnPrev.remove();
     if (btnNext) btnNext.remove();
     if (dotsCont) dotsCont.remove();
@@ -529,11 +506,9 @@ function activarGaleria(seccionEl) {
   btnNext.addEventListener("click", () => mostrar(indice + 1));
   btnPrev.addEventListener("click", () => mostrar(indice - 1));
 
-  // Escritorio: pausa al pasar el cursor sobre el carrusel
   seccionEl.addEventListener("mouseenter", detenerAuto);
   seccionEl.addEventListener("mouseleave", iniciarAuto);
 
-  // Móvil: tocar dentro del carrusel pausa; tocar fuera reanuda
   seccionEl.addEventListener("click", (e) => {
     detenerAuto();
     e.stopPropagation();
