@@ -1,17 +1,38 @@
-<section id="bloque-rsvp" class="bloque">
-  <div class="rsvp-overlay">
-    <form id="form-rsvp">
-      <h3>¡Confírmanos tu asistencia!</h3>
-      <h4>Nos encantaría contar tu presencia</h4>
-      <label
-        >Familia
-        <input type="text" id="rsvp-familia" maxlength="60" required />
-      </label>
-      <label
-        >¿Cuántos asisten?
-        <input type="number" id="rsvp-cantidad" min="1" max="30" required />
-      </label>
-      <button type="submit" id="rsvp-boton">Confirmar por WhatsApp</button>
-    </form>
+<!-- templates/rsvp.html -->
+<section class="bloque bloque-rsvp">
+  <h2 data-global="fraseCelebracion">Confirma tu asistencia</h2>
+  <p>Por favor, confirma tus datos para apartar tu lugar.</p>
+
+  <form id="form-rsvp" class="rsvp-form">
+    <div class="campo-grupo">
+      <label for="rsvp-familia">Nombre de la Familia o Invitado:</label>
+      <input type="text" id="rsvp-familia" required placeholder="Ej. Familia Pérez Gómez">
+    </div>
+
+    <div class="campo-grupo">
+      <label for="rsvp-cantidad">Número de asistentes:</label>
+      <input type="number" id="rsvp-cantidad" min="1" max="10" value="1" required>
+    </div>
+
+    <button type="submit" id="btn-enviar-rsvp" class="btn-primary">Confirmar Asistencia</button>
+  </form>
+
+  <!-- Contenedor del Pase Digital con QR (Oculto inicialmente) -->
+  <div id="rsvp-pase-container" class="pase-container" style="display: none;">
+    <div class="pase-card">
+      <h3>¡Asistencia Confirmada! 🎉</h3>
+      <p>Guarda este código QR o tómale captura de pantalla. Es tu pase de entrada al evento.</p>
+      
+      <!-- Aquí se dibuja el QR -->
+      <div id="qrcode" class="qr-box"></div>
+      
+      <p class="pase-info"><strong>Familia:</strong> <span id="lbl-familia-confirmada"></span></p>
+      <p class="pase-info"><strong>Lugares reservados:</strong> <span id="lbl-cantidad-confirmada"></span></p>
+      <p class="pase-info"><strong>Mesa Asignada:</strong> <span id="lbl-mesa-asignada">Pendiente de asignar por los novios</span></p>
+
+      <div class="pase-acciones">
+        <a id="btn-whatsapp-comprobante" href="#" target="_blank" class="btn-whatsapp">Notificar a los Novios por WhatsApp</a>
+      </div>
+    </div>
   </div>
 </section>
