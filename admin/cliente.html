@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Panel de Control - Invitación</title>
+    <link rel="stylesheet" href="css/admin.css" />
+    <!-- Librería ligera para escanear códigos QR con la cámara -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  </head>
+  <body class="cliente-dashboard-body">
+
+    <header class="dashboard-header">
+      <h1 id="titulo-evento">Panel de Gestión</h1>
+      <span id="badge-rol" class="badge">Cargando...</span>
+    </header>
+
+    <main class="dashboard-container">
+      <!-- Mensaje de error o bloqueo -->
+      <div id="panel-error" class="error-box" style="display: none;">
+        <h2>Acceso Denegado</h2>
+        <p id="error-mensaje">El enlace es inválido o el token de acceso es incorrecto.</p>
+      </div>
+
+      <!-- Contenido Principal del Panel -->
+      <div id="panel-contenido" style="display: none;">
+        
+        <!-- Métricas generales (Solo visible para el cliente) -->
+        <div id="seccion-metricas" class="metricas-grid">
+          <div class="metrica-card">
+            <h3>Total Familias</h3>
+            <p id="stat-familias">0</p>
+          </div>
+          <div class="metrica-card">
+            <h3>Total Asistentes</h3>
+            <p id="stat-asistentes">0</p>
+          </div>
+          <div class="metrica-card">
+            <h3>Ingresados</h3>
+            <p id="stat-ingresados">0</p>
+          </div>
+        </div>
+
+        <!-- Herramienta de Escáner QR (Solo visible para el cliente) -->
+        <div id="seccion-escaner" class="card-seccion">
+          <h2>Check-in en la Entrada (Escáner QR)</h2>
+          <p>Usa la cámara de tu celular para escanear el pase QR del invitado al llegar al evento.</p>
+          <button id="btn-iniciar-escaner" class="btn-primary">Abrir Cámara para Escanear</button>
+          <div id="reader" style="width: 100%; max-width: 400px; margin-top: 15px;"></div>
+          <div id="resultado-escaneo" class="resultado-scan-box" style="display: none;"></div>
+        </div>
+
+        <!-- Listado de Asistentes y Asignación de Mesas (Visible para ambos con permisos adaptados) -->
+        <div class="card-seccion">
+          <h2>Lista de Asistencia y Asignación de Mesas</h2>
+          <p>Organiza las mesas y referencias para que tus invitados sepan exactamente a dónde dirigirse.</p>
+          
+          <div class="table-responsive">
+            <table class="tabla-asistentes">
+              <thead>
+                <tr>
+                  <th>Familia / Invitado</th>
+                  <th>Lugares</th>
+                  <th>Estado</th>
+                  <th>Mesa Asignada</th>
+                  <th>Referencias</th>
+                  <th class="col-acciones">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="lista-asistentes-tbody">
+                <!-- Se llena dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <script type="module" src="js/cliente-panel.js"></script>
+  </body>
+</html>
