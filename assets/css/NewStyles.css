@@ -384,6 +384,21 @@ body {
 #form-rsvp button:active {
   transform: translateY(0);
 }
+
+#qrcode{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 15px, auto;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px, solid #e5e7eb;
+  border-radius: 8px;
+  width: fit-content;
+  min-width: 150px;
+  min-heigth: 150px;
+}
+
 /* ============================================
    Componentes especificos de Musica icono flotante.
    ============================================ */
