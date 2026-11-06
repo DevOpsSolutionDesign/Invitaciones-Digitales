@@ -1,10 +1,13 @@
-// main.js — Motor de renderizado optimizado (Plan Spark & Seguridad XSS)
+// main.js — Motor de renderizado optimizado (Plan Spark, XSS, Caché y RSVP con QR y Memoria Local)
 
 import { fallbackDe } from "./fuentes.js";
 import { db } from "./firebase-init.js";
 import {
   doc,
   getDoc,
+  collection,
+  addDoc,
+  Timestamp,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const ORDEN_DEFECTO = [
@@ -37,8 +40,6 @@ async function init() {
     return;
   }
 
-  // --- OPTIMIZACIÓN SPARK: CACHÉ LOCAL EN SESSIONSTORAGE ---
-  // Evita gastar lecturas repetidas de Firestore si el usuario recarga la página.
   const cacheKey = `invitacion_${clienteId}`;
   let cliente = null;
   let paletaColores = null;
@@ -57,7 +58,6 @@ async function init() {
       }
       cliente = clienteSnap.data();
 
-      // Convertir Timestamp de Firestore a string ISO si existe para poder guardarlo en sessionStorage
       if (cliente.fechaEvento && cliente.fechaEvento.toDate) {
         cliente.fechaEventoIso = cliente.fechaEvento.toDate().toISOString();
       }
@@ -69,7 +69,6 @@ async function init() {
         }
       }
 
-      // Guardar en caché de sesión
       sessionStorage.setItem(cacheKey, JSON.stringify({ cliente, paletaColores }));
     } catch (err) {
       mostrarError(contenedor, "No pudimos cargar la invitación. Intenta de nuevo más tarde.");
@@ -78,7 +77,6 @@ async function init() {
     }
   }
 
-  // Restaurar objeto fecha si vino de caché
   if (cliente.fechaEventoIso) {
     cliente.fechaEvento = new Date(cliente.fechaEventoIso);
   }
@@ -96,8 +94,6 @@ async function init() {
       ? cliente.ordenBloques
       : ORDEN_DEFECTO;
 
-  // --- OPTIMIZACIÓN RED: CARGA EN PARALELO DE TEMPLATES (Promise.all) ---
-  // En lugar de hacer fetch uno por uno en fila india, descargamos todos los bloques activos de un solo trancazo.
   const bloquesActivos = orden.filter(
     (bloque) => cliente.bloquesActivos && cliente.bloquesActivos[bloque]
   );
@@ -114,7 +110,6 @@ async function init() {
     }
   });
 
-  // Si la música está activa, también precargamos su template en paralelo
   let promesaMusica = null;
   if (cliente.bloquesActivos && cliente.bloquesActivos.musica) {
     promesaMusica = fetch("templates/musica.html")
@@ -125,14 +120,12 @@ async function init() {
   const resultadosTemplates = await Promise.all(promesasTemplates);
   const htmlMusica = promesaMusica ? await promesaMusica : null;
 
-  // Renderizar bloques en el orden correcto
   for (const item of resultadosTemplates) {
     if (item.html) {
       renderizarYAcoplarBloque(item.nombre, item.html, cliente, contenedor);
     }
   }
 
-  // Renderizar música flotante si cargó bien
   if (htmlMusica) {
     renderizarMusicaFlotante(htmlMusica, cliente);
   }
@@ -197,7 +190,6 @@ function renderHeaderFijo(cliente) {
   if (!cliente.headerTexto) return;
   const header = document.createElement("header");
   header.id = "header-fijo";
-  // --- BLINDAJE XSS: textContent en lugar de innerHTML ---
   header.textContent = cliente.headerTexto;
   document.body.insertBefore(header, document.body.firstChild);
 }
@@ -249,12 +241,11 @@ function renderizarYAcoplarBloque(nombre, html, cliente, contenedor) {
 
   contenedor.appendChild(seccionEl);
 
-  if (nombre === "rsvp") activarRSVP(seccionEl, cliente, seccionCfg);
+  if (nombre === "rsvp") activarRSVP(seccionEl, cliente);
   if (nombre === "regresiva") activarRegresiva(seccionEl, cliente);
   if (nombre === "galeria") activarGaleria(seccionEl);
 }
 
-// --- BLINDAJE XSS: ASIGNACIÓN SEGURA DE VALORES ---
 function asignarValor(el, valor) {
   if (valor === undefined || valor === null || valor === "") {
     el.remove();
@@ -266,7 +257,6 @@ function asignarValor(el, valor) {
   } else if (tag === "A") {
     el.href = valor;
   } else {
-    // Usamos textContent para neutralizar cualquier intento de inyección HTML/Script (XSS)
     el.textContent = valor;
   }
 }
@@ -321,7 +311,6 @@ function bindListas(seccionEl, datos) {
           ? raiz
           : raiz.querySelector("[data-src-self]");
         if (destino) destino.src = item;
-        // Blindado contra XSS también aquí en listas planas
         else raiz.textContent = item;
       }
       contenedorLista.appendChild(clon);
@@ -383,24 +372,142 @@ function aplicarEstiloSeccion(seccionEl, estiloGlobal, seccionCfg) {
   }
 }
 
-function activarRSVP(seccionEl, cliente) {
-  const form = seccionEl.querySelector("#form-rsvp");
-  if (!form) return;
+// --- FASE 1 & 2: RSVP CON QR Y MEMORIA LOCAL DE ASISTENCIA ---
+function cargarLibreriaQR() {
+  return new Promise((resolve) => {
+    if (window.QRCode) {
+      resolve(window.QRCode);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+    script.onload = () => resolve(window.QRCode);
+    document.head.appendChild(script);
+  });
+}
 
-  form.addEventListener("submit", (evento) => {
+async function activarRSVP(seccionEl, cliente) {
+  const form = seccionEl.querySelector("#form-rsvp");
+  const contenedorPase = seccionEl.querySelector("#rsvp-pase-container");
+  const qrDiv = seccionEl.querySelector("#qrcode");
+  const lblFamilia = seccionEl.querySelector("#lbl-familia-confirmada");
+  const lblCantidad = seccionEl.querySelector("#lbl-cantidad-confirmada");
+  const lblMesa = seccionEl.querySelector("#lbl-mesa-asignada");
+  const btnWhatsapp = seccionEl.querySelector("#btn-whatsapp-comprobante");
+
+  if (!form || !contenedorPase) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const clienteId = params.get("id");
+  const localKey = `rsvp_${clienteId}`;
+  const savedAsistenteId = localStorage.getItem(localKey);
+
+  // Si el invitado ya había confirmado antes en este navegador, cargamos su pase guardado
+  if (savedAsistenteId) {
+    try {
+      const snap = await getDoc(doc(db, "clientes", clienteId, "asistentes", savedAsistenteId));
+      if (snap.exists()) {
+        const data = snap.data();
+        form.style.display = "none";
+        contenedorPase.style.display = "block";
+        if (lblFamilia) lblFamilia.textContent = data.nombreFamilia;
+        if (lblCantidad) lblCantidad.textContent = data.cantidadAsistentes;
+        
+        if (lblMesa) {
+          if (data.numeroMesa) {
+            lblMesa.innerHTML = `<strong>${data.numeroMesa}</strong> <br><span class="ref-mesa">${data.referenciaMesa || ""}</span>`;
+          } else {
+            lblMesa.textContent = "Pendiente de asignar por los novios";
+          }
+        }
+
+        await cargarLibreriaQR();
+        if (qrDiv) {
+          qrDiv.innerHTML = "";
+          new QRCode(qrDiv, {
+            text: savedAsistenteId,
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H,
+          });
+        }
+
+        if (btnWhatsapp) {
+          const personas = data.cantidadAsistentes === 1 ? "persona" : "personas";
+          const mensaje = `¡Hola! Somos ${data.nombreFamilia}. Confirmamos nuestra asistencia (${data.cantidadAsistentes} ${personas}) para la boda de ${cliente.nombreFestejado}. 🎉`;
+          btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
+        }
+        return;
+      }
+    } catch (e) {
+      console.error("Error al recuperar RSVP local:", e);
+    }
+  }
+
+  // Manejador del formulario nuevo RSVP
+  form.addEventListener("submit", async (evento) => {
     evento.preventDefault();
-    const familia = seccionEl.querySelector("#rsvp-familia").value.trim();
-    const cantidad = parseInt(seccionEl.querySelector("#rsvp-cantidad").value, 10);
+    const familiaInput = seccionEl.querySelector("#rsvp-familia");
+    const cantidadInput = seccionEl.querySelector("#rsvp-cantidad");
+
+    const familia = familiaInput.value.trim();
+    const cantidad = parseInt(cantidadInput.value, 10);
     if (!familia || !cantidad || cantidad < 1) return;
 
-    const personas = cantidad === 1 ? "persona" : "personas";
-    const mensaje =
-      `¡Felicidades a ${cliente.nombreFestejado} ${cliente.fraseCelebracion}! ` +
-      `Nuestra familia ${familia.toUpperCase()} confirma su asistencia. ` +
-      `Asistiremos ${cantidad} ${personas}. 🎉`;
+    const btnSubmit = form.querySelector("button[type='submit']");
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = "Guardando asistencia...";
 
-    const url = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
-    window.open(url, "_blank", "noopener");
+    try {
+      const asistenteRef = await addDoc(
+        collection(db, "clientes", clienteId, "asistentes"),
+        {
+          nombreFamilia: familia,
+          cantidadAsistentes: cantidad,
+          estado: "confirmado",
+          fechaConfirmacion: Timestamp.now(),
+          numeroMesa: "",
+          referenciaMesa: "",
+        }
+      );
+
+      const asistenteId = asistenteRef.id;
+      localStorage.setItem(localKey, asistenteId); // Guardar en el navegador
+
+      form.style.display = "none";
+      contenedorPase.style.display = "block";
+
+      if (lblFamilia) lblFamilia.textContent = familia;
+      if (lblCantidad) lblCantidad.textContent = cantidad;
+      if (lblMesa) lblMesa.textContent = "Pendiente de asignar por los novios";
+
+      await cargarLibreriaQR();
+      if (qrDiv) {
+        qrDiv.innerHTML = "";
+        new QRCode(qrDiv, {
+          text: asistenteId,
+          width: 180,
+          height: 180,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H,
+        });
+      }
+
+      if (btnWhatsapp) {
+        const personas = cantidad === 1 ? "persona" : "personas";
+        const mensaje = `¡Hola! Somos ${familia}. Confirmamos nuestra asistencia (${cantidad} ${personas}) para la boda de ${cliente.nombreFestejado}. 🎉`;
+        btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
+      }
+
+    } catch (err) {
+      console.error("Error al guardar RSVP:", err);
+      alert("Hubo un error al confirmar tu asistencia. Intenta de nuevo.");
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = "Confirmar Asistencia";
+    }
   });
 }
 
