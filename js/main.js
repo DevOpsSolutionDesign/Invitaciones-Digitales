@@ -402,14 +402,42 @@ async function activarRSVP(seccionEl, cliente) {
   const localKey = `rsvp_${clienteId}`;
   const savedAsistenteId = localStorage.getItem(localKey);
 
-  // Si el invitado ya había confirmado antes en este navegador, cargamos su pase guardado
+  // Importar Firestore dinámicamente si no está global
+  const { db } = await import("./firebase-init.js");
+  const { doc, getDoc, addDoc, collection, Timestamp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
+
+  // Función auxiliar para renderizar el QR de manera segura
+  async function renderizarQR(asistenteId) {
+    await cargarLibreriaQR();
+    if (qrDiv) {
+      qrDiv.innerHTML = ""; // Limpiar por si acaso
+      // Asegurar que el contenedor sea visible para que QRCode calcule dimensiones
+      contenedorPase.style.display = "block";
+      form.style.display = "none";
+
+      setTimeout(() => {
+        if (window.QRCode) {
+          new QRCode(qrDiv, {
+            text: asistenteId,
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H,
+          });
+        } else {
+          qrDiv.textContent = `[ID Pase: ${asistenteId}]`;
+        }
+      }, 50);
+    }
+  }
+
+  // Si el invitado ya había confirmado antes en este navegador
   if (savedAsistenteId) {
     try {
       const snap = await getDoc(doc(db, "clientes", clienteId, "asistentes", savedAsistenteId));
       if (snap.exists()) {
         const data = snap.data();
-        form.style.display = "none";
-        contenedorPase.style.display = "block";
         if (lblFamilia) lblFamilia.textContent = data.nombreFamilia;
         if (lblCantidad) lblCantidad.textContent = data.cantidadAsistentes;
         
@@ -421,25 +449,17 @@ async function activarRSVP(seccionEl, cliente) {
           }
         }
 
-        await cargarLibreriaQR();
-        if (qrDiv) {
-          qrDiv.innerHTML = "";
-          new QRCode(qrDiv, {
-            text: savedAsistenteId,
-            width: 180,
-            height: 180,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H,
-          });
-        }
-
         if (btnWhatsapp) {
           const personas = data.cantidadAsistentes === 1 ? "persona" : "personas";
-          const mensaje = `¡Hola! Somos ${data.nombreFamilia}. Confirmamos nuestra asistencia (${data.cantidadAsistentes} ${personas}) para la boda de ${cliente.nombreFestejado}. 🎉`;
+          const mensaje = `¡Hola! Somos la ${data.nombreFamilia}. Confirmamos nuestra asistencia (${data.cantidadAsistentes} ${personas}) para la boda de ${cliente.nombreFestejado}. 🎉`;
           btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
         }
+
+        await renderizarQR(savedAsistenteId);
         return;
+      } else {
+        // Si el ID guardado ya no existe en Firestore, limpiamos localStorage
+        localStorage.removeItem(localKey);
       }
     } catch (e) {
       console.error("Error al recuperar RSVP local:", e);
@@ -474,33 +494,19 @@ async function activarRSVP(seccionEl, cliente) {
       );
 
       const asistenteId = asistenteRef.id;
-      localStorage.setItem(localKey, asistenteId); // Guardar en el navegador
-
-      form.style.display = "none";
-      contenedorPase.style.display = "block";
+      localStorage.setItem(localKey, asistenteId);
 
       if (lblFamilia) lblFamilia.textContent = familia;
       if (lblCantidad) lblCantidad.textContent = cantidad;
       if (lblMesa) lblMesa.textContent = "Pendiente de asignar por los novios";
 
-      await cargarLibreriaQR();
-      if (qrDiv) {
-        qrDiv.innerHTML = "";
-        new QRCode(qrDiv, {
-          text: asistenteId,
-          width: 180,
-          height: 180,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.H,
-        });
-      }
-
       if (btnWhatsapp) {
         const personas = cantidad === 1 ? "persona" : "personas";
-        const mensaje = `¡Hola! Somos ${familia}. Confirmamos nuestra asistencia (${cantidad} ${personas}) para la boda de ${cliente.nombreFestejado}. 🎉`;
+        const mensaje = `¡Hola! Somos la ${familia}. Confirmamos nuestra asistencia (${cantidad} ${personas}) para la boda de ${cliente.nombreFestejado}. 🎉`;
         btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
       }
+
+      await renderizarQR(asistenteId);
 
     } catch (err) {
       console.error("Error al guardar RSVP:", err);
