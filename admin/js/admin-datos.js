@@ -15,26 +15,16 @@ export async function obtenerCliente(id) {
   return snap.exists() ? snap.data() : null;
 }
 
-// --- GUARDADO INTELIGENTE CON PINES CONDICIONALES ---
 export async function guardarCliente(id, datos) {
+  // Verificar si el bloque RSVP está activo para generar o mantener pines de seguridad
   const clienteExistenteSnap = await getDoc(doc(db, "clientes", id));
   const datosExistentes = clienteExistenteSnap.exists() ? clienteExistenteSnap.data() : {};
 
-  // Validar si el bloque RSVP está activo
   const rsvpActivo = datos.bloquesActivos && datos.bloquesActivos.rsvp === true;
 
   if (rsvpActivo) {
-    if (!datosExistentes.pinCliente) {
-      datos.pinCliente = "cli_" + generarTokenAleatorio(8);
-    } else {
-      datos.pinCliente = datosExistentes.pinCliente;
-    }
-
-    if (!datosExistentes.pinOrganizador) {
-      datos.pinOrganizador = "org_" + generarTokenAleatorio(8);
-    } else {
-      datos.pinOrganizador = datosExistentes.pinOrganizador;
-    }
+    datos.pinCliente = datosExistentes.pinCliente || ("cli_" + generarTokenAleatorio(8));
+    datos.pinOrganizador = datosExistentes.pinOrganizador || ("org_" + generarTokenAleatorio(8));
   } else {
     datos.pinCliente = null;
     datos.pinOrganizador = null;
@@ -60,7 +50,6 @@ export function generarIdCliente() {
   return id;
 }
 
-// Generador auxiliar de tokens aleatorios para los pines de seguridad
 function generarTokenAleatorio(longitud = 8) {
   const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let resultado = "";

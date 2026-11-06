@@ -28,9 +28,13 @@ const vistaPaletas = document.getElementById("vista-paletas");
 const listaClientesEl = document.getElementById("lista-clientes");
 const btnNuevoCliente = document.getElementById("btn-nuevo-cliente");
 const btnVolverLista = document.getElementById("btn-volver-lista");
+//const btnGuardar = document.getElementById("btn-guardar");
 const btnPreview = document.getElementById("btn-preview");
+//const guardarEstado = document.getElementById("guardar-estado");
 const btnPaletas = document.getElementById("btn-paletas");
-const btnVolverDesdePaletas = document.getElementById("btn-volver-desde-paletas");
+const btnVolverDesdePaletas = document.getElementById(
+  "btn-volver-desde-paletas",
+);
 const listaPaletasEl = document.getElementById("lista-paletas");
 const btnNuevaPaleta = document.getElementById("btn-nueva-paleta");
 const guardarEstadoGlobal = document.getElementById("guardar-estado-global");
@@ -40,11 +44,11 @@ const guardarEstadoSeccion = document.getElementById("guardar-estado-seccion");
 const TAMANOS = ["chico", "mediano", "grande", "extragrande"];
 
 let paletasCache = [];
+// Variables globales para usar en admin-formularios.js
 window.paletasCache = paletasCache;
 const clienteIdRef = { id: null };
 let clienteActual = {};
 let ordenBloquesActual = [...ORDEN_DEFECTO];
-let paletaEditando = null;
 
 export async function inicializarPanel() {
   paletasCache = await listarPaletas();
@@ -67,6 +71,7 @@ export async function inicializarPanel() {
     await mostrarListaClientes();
   });
 
+  //btnGuardar.addEventListener("click", guardarClienteActual);
   btnPreview.addEventListener("click", () => {
     if (!clienteIdRef.id) return;
     window.open(`../index.html?id=${clienteIdRef.id}`, "_blank", "noopener");
@@ -77,19 +82,19 @@ export async function inicializarPanel() {
     vistaPaletas.hidden = false;
     await mostrarListaPaletas();
   });
-
   btnVolverDesdePaletas.addEventListener("click", () => {
     vistaPaletas.hidden = true;
     vistaLista.hidden = false;
   });
-
   btnNuevaPaleta.addEventListener("click", () => abrirFormPaleta(null));
-
+  // Botón cerrar editor de paleta
   const btnCerrarPaleta = document.getElementById("btn-cerrar-paleta");
   if (btnCerrarPaleta) {
     btnCerrarPaleta.addEventListener("click", cerrarEditorPaleta);
   }
 }
+
+// --- listado de clientes -----------------------------------------------
 
 async function mostrarListaClientes() {
   const clientes = await listarClientes();
@@ -118,82 +123,126 @@ async function mostrarListaClientes() {
   });
 }
 
-// --- GESTIÓN DE PALETAS ---
-async function mostrarListaPaletas() {
-  paletasCache = await listarPaletas();
-  listaPaletasEl.innerHTML = "";
+// --- paletas -------------------------------------------------------------
 
+let paletaEditando = null; // ← Nueva variable para trackear la paleta en edición
+
+async function mostrarListaPaletas() {
+  const lista = document.getElementById("lista-paletas");
+  lista.innerHTML = "";
+
+  // Ocultar editor si no hay paletas
   document.getElementById("paleta-editor").hidden = true;
   document.getElementById("paleta-mensaje").hidden = false;
 
-  if (!paletasCache.length) {
-    listaPaletasEl.innerHTML = `<p class="lista-vacia">No hay paletas registradas.</p>`;
-    return;
-  }
-
   paletasCache.forEach((p) => {
-    const fila = document.createElement("div");
-    fila.className = "paleta-fila";
-    fila.innerHTML = `<strong>${p.nombre || p.id}</strong><span>ID: ${p.id}</span>`;
-    fila.addEventListener("click", () => abrirFormPaleta(p));
-    listaPaletasEl.appendChild(fila);
+    const fila = document.createElement("button");
+    fila.type = "button";
+    fila.className = "fila-cliente";
+    fila.innerHTML = `
+      <strong>${p.nombre || p.id}</strong>
+      <span>id: ${p.id}</span>
+      <div class="mini-swatches">
+        ${Object.values(p.colores || {})
+          .map((c) => `<span style="background:${c}"></span>`)
+          .join("")}
+      </div>
+    `;
+    fila.addEventListener("click", () => abrirEditorPaleta(p));
+    lista.appendChild(fila);
   });
 }
 
-function abrirFormPaleta(paleta) {
+function abrirEditorPaleta(paleta) {
   paletaEditando = paleta;
   const editor = document.getElementById("paleta-editor");
   const body = document.getElementById("paleta-editor-body");
   const titulo = document.getElementById("paleta-editor-titulo");
 
+  // Ocultar mensaje y mostrar editor
   document.getElementById("paleta-mensaje").hidden = true;
   editor.hidden = false;
 
-  const id = paleta ? paleta.id : "";
-  const nombre = paleta ? paleta.nombre || "" : "";
-  const colores = paleta ? paleta.colores || {} : {
+  const id = paleta.id;
+  const colores = paleta.colores || {
     primario: "#8B2E2E",
     secundario: "#D9B08C",
     acento: "#C97B3D",
     texto: "#2C2C2A",
     fondo: "#FAF7F2",
   };
+  const nombre = paleta.nombre || "";
 
-  titulo.textContent = paleta ? `Editar: ${nombre || id}` : "Nueva paleta";
+  titulo.textContent = `Editar: ${nombre || id}`;
 
-  body.innerHTML = `
-    <form id="form-paleta-edit">
-      ${!paleta ? `<div class="campo"><label>ID de paleta (ej. tonos-pastel)</label><input type="text" id="pal-id" required></div>` : ""}
-      <div class="campo"><label>Nombre</label><input type="text" id="pal-nombre" value="${nombre}" required></div>
-      <div class="campo"><label>Color Primario</label><input type="color" id="pal-primario" value="${colores.primario || '#8B2E2E'}"></div>
-      <div class="campo"><label>Color Secundario</label><input type="color" id="pal-secundario" value="${colores.secundario || '#D9B08C'}"></div>
-      <div class="campo"><label>Color Acento</label><input type="color" id="pal-acento" value="${colores.acento || '#C97B3D'}"></div>
-      <div class="campo"><label>Color Texto</label><input type="color" id="pal-texto" value="${colores.texto || '#2C2C2A'}"></div>
-      <div class="campo"><label>Color Fondo</label><input type="color" id="pal-fondo" value="${colores.fondo || '#FAF7F2'}"></div>
-      <button type="submit">Guardar Paleta</button>
-    </form>
+  // Construir el formulario
+  let html = `
+	  <div class="campo">
+		<label>Nombre</label>
+		<input type="text" id="pal-nombre" value="${nombre}" placeholder="Nombre de la paleta">
+	  </div>
+	  <div class="paleta-color-header">
+		<span class="header-tipo">Tipo</span>
+		<span class="header-selector">Selector</span>
+		<span class="header-actual">Color Actual</span>
+		<span class="header-nuevo">Color Nuevo</span>
+		<span class="header-hex">Hex</span>
+	  </div>
+	`;
+
+  // Generar filas para cada color
+  const colorKeys = Object.keys(colores);
+  colorKeys.forEach((clave) => {
+    const valor = colores[clave] || "#000000";
+    html += `
+		<div class="paleta-color-row">
+		  <label>${clave}</label>
+		  <input type="color" id="pal-${clave}" value="${valor}" data-clave="${clave}">
+		  <div class="paleta-color-preview" id="preview-actual-${clave}" style="background:${valor}"></div>
+		  <div class="paleta-color-preview" id="preview-nuevo-${clave}" style="background:${valor}"></div>
+		  <span class="paleta-color-hex" id="hex-${clave}">${valor}</span>
+		</div>
+	  `;
+  });
+
+  html += `
+    <button type="button" id="pal-guardar" class="btn-guardar-paleta">Guardar paleta</button>
   `;
 
-  document.getElementById("form-paleta-edit").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const nuevoId = paleta ? paleta.id : document.getElementById("pal-id").value.trim();
-    if (!nuevoId) return;
+  body.innerHTML = html;
 
-    const datosPaleta = {
+  // Event listeners para actualizar vista previa al cambiar color
+  colorKeys.forEach((clave) => {
+    const input = document.getElementById(`pal-${clave}`);
+    if (input) {
+      input.addEventListener("input", (e) => {
+        const color = e.target.value;
+        // Vista previa del nuevo color (seleccionado en el momento)
+        const previewNuevo = document.getElementById(`preview-nuevo-${clave}`);
+        const hex = document.getElementById(`hex-${clave}`);
+        if (previewNuevo) previewNuevo.style.background = color;
+        if (hex) hex.textContent = color;
+      });
+    }
+  });
+
+  // Event listener para guardar
+  document.getElementById("pal-guardar").addEventListener("click", async () => {
+    const nuevaPaleta = {
       nombre: document.getElementById("pal-nombre").value.trim(),
-      colores: {
-        primario: document.getElementById("pal-primario").value,
-        secundario: document.getElementById("pal-secundario").value,
-        acento: document.getElementById("pal-acento").value,
-        texto: document.getElementById("pal-texto").value,
-        fondo: document.getElementById("pal-fondo").value,
-      }
+      colores: Object.fromEntries(
+        colorKeys.map((clave) => [
+          clave,
+          document.getElementById(`pal-${clave}`).value,
+        ]),
+      ),
     };
-
-    await guardarPaleta(nuevoId, datosPaleta);
+    await guardarPaleta(id, nuevaPaleta);
     paletasCache = await listarPaletas();
-    window.paletasCache = paletasCache;
     await mostrarListaPaletas();
+    // Reabrir la paleta guardada para mostrar los cambios
+    const paletaActualizada = paletasCache.find((p) => p.id === id);
+    if (paletaActualizada) abrirEditorPaleta(paletaActualizada);
   });
 }
 
@@ -203,17 +252,47 @@ function cerrarEditorPaleta() {
   paletaEditando = null;
 }
 
+// Modificar abrirFormPaleta para usar el nuevo editor
+function abrirFormPaleta(paleta) {
+  if (paleta) {
+    abrirEditorPaleta(paleta);
+  } else {
+    // Nueva paleta: crear una vacía y abrir editor
+    const id = prompt("ID corto para la nueva paleta (ej. PL4):");
+    if (!id) return;
+    const nuevaPaleta = {
+      id: id,
+      nombre: "",
+      colores: {
+        primario: "#8B2E2E",
+        secundario: "#D9B08C",
+        acento: "#C97B3D",
+        texto: "#2C2C2A",
+        fondo: "#FAF7F2",
+      },
+    };
+    paletasCache.push(nuevaPaleta);
+    abrirEditorPaleta(nuevaPaleta);
+  }
+}
+
+// --- editor de cliente -----------------------------------------------------
+
 function abrirEditor() {
   vistaLista.hidden = true;
   vistaEditor.hidden = false;
+  //guardarEstado.hidden = true;
   document.getElementById("editor-id-cliente").textContent = clienteIdRef.id;
 
+  // Ocultar estados de guardado
   guardarEstadoGlobal.hidden = true;
   guardarEstadoBloques.hidden = true;
   guardarEstadoSeccion.hidden = true;
 
+  // 🔒 FORZAR MODAL OCULTO USANDO display: none
   const modal = document.getElementById("modal-seccion");
-  if (modal) modal.style.display = "none";
+  modal.style.display = "none";
+  document.getElementById("modal-body").innerHTML = "";
 
   window.clienteActual = clienteActual;
   window.paletasCache = paletasCache;
@@ -224,13 +303,359 @@ function abrirEditor() {
       : [...ORDEN_DEFECTO];
 
   renderFormularioGlobal();
-  renderizarEnlacesPrivados();
   renderRejillaBloques();
   llenarSelectorSecciones();
   inicializarEventosNuevos();
 }
 
-// --- RENDERIZAR ENLACES DE ACCESO PRIVADO (CORRECCIÓN DE RUTA /admin/admin/) ---
+function renderFormularioGlobal() {
+  const cont = document.getElementById("form-global");
+  const c = clienteActual;
+  const eg = c.estiloGlobal || {};
+
+  cont.innerHTML = `
+    <div class="campo"><label>Tipo de evento</label>
+      <input type="text" id="g-tipoEvento" value="${c.tipoEvento || ""}" placeholder="boda, bautizo, XV años..."></div>
+    <div class="campo"><label>Nombre del festejado</label>
+      <input type="text" id="g-nombreFestejado" value="${c.nombreFestejado || ""}"></div>
+    <div class="campo"><label>Frase de celebración</label>
+      <input type="text" id="g-fraseCelebracion" value="${c.fraseCelebracion || ""}" placeholder="en su boda"></div>
+    <div class="campo"><label>Texto del encabezado fijo (aparece siempre arriba, opcional)</label>
+      <input type="text" id="g-headerTexto" value="${c.headerTexto || ""}" placeholder="Mis XV años Sherlyn Ximena"></div>
+    <div class="campo"><label>Número de WhatsApp (con código de país, sin +)</label>
+      <input type="text" id="g-numeroWhatsapp" value="${c.numeroWhatsapp || ""}" placeholder="521XXXXXXXXXX"></div>
+    <div class="campo"><label>Fecha y hora del evento</label>
+      <input type="datetime-local" id="g-fechaEvento" value="${inputDesdeTimestamp(c.fechaEvento)}"></div>
+    <div class="campo"><label>Días de gracia antes de borrar (después del evento)</label>
+      <input type="number" id="g-diasGracia" min="0" max="30" value="${c.diasGracia ?? 7}"></div>
+    <div class="campo"><label>Paleta de colores</label>
+      <select id="g-paletaId">
+        <option value="">— sin paleta —</option>
+        ${paletasCache.map((p) => `<option value="${p.id}" ${c.paletaId === p.id ? "selected" : ""}>${p.nombre || p.id}</option>`).join("")}
+      </select>
+    </div>
+    <div class="campo"><label>Tipografía global</label>
+      <select id="g-fuenteCatalogo">
+        <option value="">— elegir del catálogo —</option>
+        ${construirOpcionesFuentesAgrupadas(eg.tipografia && eg.tipografia.origen === "catalogo" ? eg.tipografia.valor : null)}
+      </select>
+      <input type="text" id="g-fuentePersonalizada" placeholder="...o escribe una tipografía"
+             value="${eg.tipografia && eg.tipografia.origen === "personalizada" ? eg.tipografia.valor : ""}">
+    </div>
+    <div class="campo"><label>Tamaño de fuente global</label>
+      <select id="g-tamanoPreset">
+        ${TAMANOS.map((p) => `<option value="${p}" ${eg.tamano && eg.tamano.modo === "preset" && eg.tamano.valor === p ? "selected" : ""}>${p}</option>`).join("")}
+      </select>
+    </div>
+    <div id="g-fondo-wrap" class="campo"></div>
+    <div id="g-favicon-wrap" class="campo"></div>    
+  `;
+  const faviconWrap = document.getElementById("g-favicon-wrap");
+  faviconWrap.appendChild(
+    crearWidgetArchivo(
+      clienteIdRef,
+      {
+        clave: "favicon",
+        etiqueta: "Favicon (icono de pestaña)",
+        carpeta: "images",
+      },
+      c.favicon,
+    ),
+  );
+  const fondoWrap = document.getElementById("g-fondo-wrap");
+  fondoWrap.appendChild(
+    crearWidgetArchivo(
+      clienteIdRef,
+      {
+        clave: "fondoImagen",
+        etiqueta:
+          "Imagen de fondo personalizada (opcional, sobreescribe el color de la paleta)",
+        carpeta: "images",
+      },
+      c.fondoImagen,
+    ),
+  );
+}
+
+// --- rejilla de bloques activos + orden con flechas ------------------------
+
+function renderRejillaBloques() {
+  const cont = document.getElementById("rejilla-bloques");
+  const activos = clienteActual.bloquesActivos || {};
+
+  const filasOrdenables = ordenBloquesActual
+    .map((clave) => BLOQUES.find((b) => b.clave === clave))
+    .filter(Boolean);
+
+  const musicaBloque = BLOQUES.find((b) => b.clave === "musica");
+
+  cont.innerHTML = `
+    <div class="lista-ordenable">
+      ${filasOrdenables
+        .map(
+          (b, i) => `
+        <div class="fila-bloque" data-clave="${b.clave}">
+          <label class="chk"><input type="checkbox" data-bloque-check="${b.clave}" ${activos[b.clave] ? "checked" : ""}> ${b.etiqueta}</label>
+          <div class="flechas">
+            <button type="button" class="btn-flecha" data-mover="arriba" data-idx="${i}" ${i === 0 ? "disabled" : ""}>↑</button>
+            <button type="button" class="btn-flecha" data-mover="abajo" data-idx="${i}" ${i === filasOrdenables.length - 1 ? "disabled" : ""}>↓</button>
+          </div>
+        </div>
+      `,
+        )
+        .join("")}
+    </div>
+    <div class="fila-bloque fila-musica">
+      <label class="chk"><input type="checkbox" data-bloque-check="musica" ${activos.musica ? "checked" : ""}> ${musicaBloque.etiqueta}</label>
+      <span class="nota-musica">no tiene orden — flota siempre visible</span>
+    </div>
+  `;
+
+  cont.querySelectorAll(".btn-flecha").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.idx);
+      const destino = btn.dataset.mover === "arriba" ? idx - 1 : idx + 1;
+      if (destino < 0 || destino >= ordenBloquesActual.length) return;
+      [ordenBloquesActual[idx], ordenBloquesActual[destino]] = [
+        ordenBloquesActual[destino],
+        ordenBloquesActual[idx],
+      ];
+      renderRejillaBloques();
+    });
+  });
+}
+
+function leerFormularioGlobal() {
+  const val = (id) => document.getElementById(id).value.trim();
+  const fuentePersonalizada = val("g-fuentePersonalizada");
+  const fuenteCatalogo = val("g-fuenteCatalogo");
+
+  const bloquesActivos = {};
+  document.querySelectorAll("[data-bloque-check]").forEach((chk) => {
+    bloquesActivos[chk.dataset.bloqueCheck] = chk.checked;
+  });
+
+  const fechaEventoInput = val("g-fechaEvento");
+  const diasGracia = Number(val("g-diasGracia") || 7);
+  const fechaEvento = timestampDesdeInput(fechaEventoInput);
+  let fechaBorrado = null;
+  if (fechaEvento) {
+    const d = fechaEvento.toDate();
+    d.setDate(d.getDate() + diasGracia);
+    fechaBorrado = timestampDesdeDate(d);
+  }
+
+  const fondoImagen = document
+    .querySelector("#g-fondo-wrap .archivo-ruta")
+    .value.trim();
+
+  return {
+    tipoEvento: val("g-tipoEvento"),
+    nombreFestejado: val("g-nombreFestejado"),
+    fraseCelebracion: val("g-fraseCelebracion"),
+    headerTexto: val("g-headerTexto"),
+    numeroWhatsapp: val("g-numeroWhatsapp"),
+    fechaEvento,
+    diasGracia,
+    fechaBorrado,
+    paletaId: val("g-paletaId") || null,
+    fondoImagen: fondoImagen || null,
+    bloquesActivos,
+    ordenBloques: [...ordenBloquesActual],
+    estiloGlobal: {
+      tipografia: fuentePersonalizada
+        ? { origen: "personalizada", valor: fuentePersonalizada }
+        : fuenteCatalogo
+          ? { origen: "catalogo", valor: fuenteCatalogo }
+          : null,
+      tamano: {
+        modo: "preset",
+        valor: document.getElementById("g-tamanoPreset").value,
+      },
+    },
+    favicon:
+      document.querySelector("#g-favicon-wrap .archivo-ruta").value.trim() ||
+      null,
+  };
+}
+
+// --- guardar ---------------------------------------------------------------
+
+async function guardarClienteActual(elementoEstado) {
+  const global = leerFormularioGlobal();
+  const datosFinales = { ...global, secciones: clienteActual.secciones || {} };
+
+  if (elementoEstado) {
+    elementoEstado.hidden = false;
+    elementoEstado.textContent = "Guardando...";
+  }
+
+  try {
+    await guardarCliente(clienteIdRef.id, datosFinales);
+    clienteActual = datosFinales;
+    if (elementoEstado) {
+      elementoEstado.textContent = "Guardado ✓";
+      setTimeout(() => {
+        elementoEstado.hidden = true;
+      }, 2000);
+    }
+  } catch (err) {
+    if (elementoEstado) {
+      elementoEstado.textContent = "Error";
+      elementoEstado.style.color = "#a32d2d";
+    }
+    console.error(err);
+  }
+}
+
+// ============================================
+// NUEVAS FUNCIONES PARA EL NUEVO LAYOUT
+// ============================================
+
+function llenarSelectorSecciones() {
+  const select = document.getElementById("selector-seccion");
+  if (!select) return;
+  select.innerHTML = BLOQUES.map(
+    (b) => `<option value="${b.clave}">${b.etiqueta}</option>`,
+  ).join("");
+}
+
+function abrirModalSeccion() {
+  const select = document.getElementById("selector-seccion");
+  const clave = select.value;
+  const bloque = BLOQUES.find((b) => b.clave === clave);
+  if (!bloque) {
+    console.error("❌ Bloque no encontrado:", clave);
+    return;
+  }
+
+  // Configurar título del modal
+  document.getElementById("modal-titulo").textContent =
+    `Editar: ${bloque.etiqueta}`;
+
+  // Obtener la configuración actual de la sección
+  const seccionCfg =
+    (clienteActual.secciones && clienteActual.secciones[clave]) || {};
+
+  // Renderizar la sección dentro del modal
+  const modalBody = document.getElementById("modal-body");
+
+  if (!modalBody) {
+    console.error("❌ modalBody no encontrado en el DOM");
+    return;
+  }
+
+  renderSeccion(modalBody, clienteIdRef, clave, seccionCfg);
+
+  // Guardar la clave de la sección actual en el modal (para saber cuál se está editando)
+  modalBody.dataset.seccion = clave;
+
+  // 🔓 MOSTRAR MODAL con display: flex
+  const modal = document.getElementById("modal-seccion");
+  modal.style.display = "flex";
+}
+
+function cerrarModal() {
+  const modal = document.getElementById("modal-seccion");
+  modal.style.display = "none";
+  document.getElementById("modal-body").innerHTML = "";
+}
+
+function guardarDesdeModal() {
+  const modalBody = document.getElementById("modal-body");
+  const clave = modalBody.dataset.seccion;
+  if (!clave) return;
+
+  // Leer la sección del modal
+  const seccionLeida = leerSeccion(modalBody);
+
+  // Actualizar clienteActual con los datos de la sección
+  if (!clienteActual.secciones) clienteActual.secciones = {};
+  clienteActual.secciones[clave] = seccionLeida;
+
+  // Guardar todo en Firestore
+  guardarClienteActual(guardarEstadoSeccion);
+
+  // Cerrar el modal
+  cerrarModal();
+}
+
+function guardarGlobal() {
+  // Leer el formulario global
+  const global = leerFormularioGlobal();
+
+  // Actualizar clienteActual con los datos globales
+  Object.assign(clienteActual, global);
+
+  // Guardar todo en Firestore
+  guardarClienteActual(guardarEstadoGlobal);
+}
+
+function guardarBloques() {
+  // Leer los bloques activos y su orden
+  const bloquesActivos = {};
+  document.querySelectorAll("[data-bloque-check]").forEach((chk) => {
+    bloquesActivos[chk.dataset.bloqueCheck] = chk.checked;
+  });
+
+  // Actualizar clienteActual
+  clienteActual.bloquesActivos = bloquesActivos;
+  clienteActual.ordenBloques = [...ordenBloquesActual];
+
+  // Guardar todo en Firestore
+  guardarClienteActual(guardarEstadoBloques);
+}
+
+function inicializarEventosNuevos() {
+  // Botón Guardar Global
+  const btnGuardarGlobal = document.getElementById("btn-guardar-global");
+  if (btnGuardarGlobal) {
+    btnGuardarGlobal.addEventListener("click", guardarGlobal);
+  }
+
+  // Botón Guardar Bloques
+  const btnGuardarBloques = document.getElementById("btn-guardar-bloques");
+  if (btnGuardarBloques) {
+    btnGuardarBloques.addEventListener("click", guardarBloques);
+  }
+
+  // Botón Editar → Abrir Modal
+  const btnEditarSeccion = document.getElementById("btn-editar-seccion");
+  if (btnEditarSeccion) {
+    btnEditarSeccion.addEventListener("click", abrirModalSeccion);
+  }
+
+  // Botón Guardar del Modal
+  const btnModalGuardar = document.getElementById("modal-guardar");
+  if (btnModalGuardar) {
+    btnModalGuardar.addEventListener("click", guardarDesdeModal);
+  }
+
+  // Botón Cancelar del Modal
+  const btnModalCancelar = document.getElementById("modal-cancelar");
+  if (btnModalCancelar) {
+    btnModalCancelar.addEventListener("click", cerrarModal);
+  }
+
+  // Botón Cerrar (✕) del Modal
+  const btnModalCerrar = document.getElementById("modal-cerrar");
+  if (btnModalCerrar) {
+    btnModalCerrar.addEventListener("click", cerrarModal);
+  }
+
+  // Cerrar modal al hacer clic fuera del contenido
+  const modal = document.getElementById("modal-seccion");
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.style.display = "none";
+        document.getElementById("modal-body").innerHTML = "";
+      }
+    });
+  }
+}
+
+// --- RENDERIZAR ENLACES DE ACCESO PRIVADO (RSVP) ---
 function renderizarEnlacesPrivados() {
   let contenedor = document.getElementById("seccion-accesos-privados-admin");
   const formGlobal = document.getElementById("form-global");
@@ -247,7 +672,6 @@ function renderizarEnlacesPrivados() {
   if (rsvpActivo && clienteActual.pinCliente) {
     let origin = window.location.origin;
     let pathname = window.location.pathname;
-    // Cortar antes de /admin/ para obtener la raíz correcta del sitio
     if (pathname.includes("admin/")) {
       pathname = pathname.substring(0, pathname.lastIndexOf("admin/"));
     }
@@ -281,322 +705,5 @@ function renderizarEnlacesPrivados() {
     contenedor.style.display = "block";
   } else {
     contenedor.style.display = "none";
-  }
-}
-
-function renderFormularioGlobal() {
-  const cont = document.getElementById("form-global");
-  const c = clienteActual;
-  const eg = c.estiloGlobal || {};
-
-  cont.innerHTML = `
-    <div class="campo"><label>Tipo de evento</label>
-      <input type="text" id="g-tipoEvento" value="${c.tipoEvento || ""}" placeholder="boda, bautizo, XV años..."></div>
-    <div class="campo"><label>Nombre del festejado</label>
-      <input type="text" id="g-nombreFestejado" value="${c.nombreFestejado || ""}"></div>
-    <div class="campo"><label>Frase de celebración</label>
-      <input type="text" id="g-fraseCelebracion" value="${c.fraseCelebracion || ""}" placeholder="en su boda"></div>
-    <div class="campo"><label>Texto del encabezado fijo</label>
-      <input type="text" id="g-headerTexto" value="${c.headerTexto || ""}" placeholder="Mis XV años Sherlyn Ximena"></div>
-    <div class="campo"><label>Número de WhatsApp</label>
-      <input type="text" id="g-numeroWhatsapp" value="${c.numeroWhatsapp || ""}" placeholder="521XXXXXXXXXX"></div>
-    <div class="campo"><label>Fecha y hora del evento</label>
-      <input type="datetime-local" id="g-fechaEvento" value="${inputDesdeTimestamp(c.fechaEvento)}"></div>
-    <div class="campo"><label>Días de gracia antes de borrar</label>
-      <input type="number" id="g-diasGracia" min="0" max="30" value="${c.diasGracia ?? 7}"></div>
-    <div class="campo"><label>Paleta de colores</label>
-      <select id="g-paletaId">
-        <option value="">— sin paleta —</option>
-        ${paletasCache.map((p) => `<option value="${p.id}" ${c.paletaId === p.id ? "selected" : ""}>${p.nombre || p.id}</option>`).join("")}
-      </select>
-    </div>
-    <div class="campo"><label>Tipografía global</label>
-      <select id="g-fuenteCatalogo">
-        <option value="">— elegir del catálogo —</option>
-        ${construirOpcionesFuentesAgrupadas(eg.tipografia && eg.tipografia.origen === "catalogo" ? eg.tipografia.valor : null)}
-      </select>
-      <input type="text" id="g-fuentePersonalizada" placeholder="...o escribe una tipografía"
-             value="${eg.tipografia && eg.tipografia.origen === "personalizada" ? eg.tipografia.valor : ""}">
-    </div>
-    <div class="campo"><label>Tamaño de fuente global</label>
-      <select id="g-tamanoPreset">
-        ${TAMANOS.map((p) => `<option value="${p}" ${eg.tamano && eg.tamano.modo === "preset" && eg.tamano.valor === p ? "selected" : ""}>${p}</option>`).join("")}
-      </select>
-    </div>
-    <div id="g-fondo-wrap" class="campo"></div>
-    <div id="g-favicon-wrap" class="campo"></div>    
-  `;
-
-  const faviconWrap = document.getElementById("g-favicon-wrap");
-  faviconWrap.appendChild(
-    crearWidgetArchivo(
-      clienteIdRef,
-      { clave: "favicon", etiqueta: "Favicon (icono de pestaña)", carpeta: "images" },
-      c.favicon,
-    ),
-  );
-  const fondoWrap = document.getElementById("g-fondo-wrap");
-  fondoWrap.appendChild(
-    crearWidgetArchivo(
-      clienteIdRef,
-      { clave: "fondoImagen", etiqueta: "Imagen de fondo personalizada", carpeta: "images" },
-      c.fondoImagen,
-    ),
-  );
-}
-
-function leerFormularioGlobal() {
-  const val = (id) => document.getElementById(id).value.trim();
-  const fuentePersonalizada = val("g-fuentePersonalizada");
-  const fuenteCatalogo = val("g-fuenteCatalogo");
-
-  const bloquesActivos = {};
-  document.querySelectorAll("[data-bloque-check]").forEach((chk) => {
-    bloquesActivos[chk.dataset.bloqueCheck] = chk.checked;
-  });
-
-  const fechaEventoInput = val("g-fechaEvento");
-  const diasGracia = Number(val("g-diasGracia") || 7);
-  const fechaEvento = timestampDesdeInput(fechaEventoInput);
-  let fechaBorrado = null;
-  if (fechaEvento) {
-    const d = fechaEvento.toDate();
-    d.setDate(d.getDate() + diasGracia);
-    fechaBorrado = timestampDesdeDate(d);
-  }
-
-  const fondoEl = document.querySelector("#g-fondo-wrap .archivo-ruta");
-  const faviconEl = document.querySelector("#g-favicon-wrap .archivo-ruta");
-
-  return {
-    tipoEvento: val("g-tipoEvento"),
-    nombreFestejado: val("g-nombreFestejado"),
-    fraseCelebracion: val("g-fraseCelebracion"),
-    headerTexto: val("g-headerTexto"),
-    numeroWhatsapp: val("g-numeroWhatsapp"),
-    fechaEvento,
-    diasGracia,
-    fechaBorrado,
-    paletaId: val("g-paletaId") || null,
-    fondoImagen: fondoEl ? fondoEl.value.trim() : null,
-    favicon: faviconEl ? faviconEl.value.trim() : null,
-    bloquesActivos,
-    ordenBloques: [...ordenBloquesActual],
-    estiloGlobal: {
-      tipografia: fuentePersonalizada
-        ? { origen: "personalizada", valor: fuentePersonalizada }
-        : fuenteCatalogo
-          ? { origen: "catalogo", valor: fuenteCatalogo }
-          : null,
-      tamano: {
-        modo: "preset",
-        valor: document.getElementById("g-tamanoPreset").value,
-      },
-    },
-  };
-}
-
-function renderRejillaBloques() {
-  const rejilla = document.getElementById("rejilla-bloques");
-  rejilla.innerHTML = "";
-
-  ordenBloquesActual.forEach((clave) => {
-    const meta = BLOQUES.find((b) => b.clave === clave);
-    if (!meta) return;
-
-    const activo = clienteActual.bloquesActivos
-      ? Boolean(clienteActual.bloquesActivos[clave])
-      : true;
-
-    const fila = document.createElement("div");
-    fila.className = "fila-bloque-orden";
-    fila.draggable = true;
-    fila.dataset.clave = clave;
-
-    fila.innerHTML = `
-      <span class="arrastrar-handle" title="Arrastrar para reordenar">☰</span>
-      <label class="fila-bloque-label">
-        <input type="checkbox" data-bloque-check="${clave}" ${activo ? "checked" : ""}>
-        <span>${meta.etiqueta}</span>
-      </label>
-      <div class="bloque-orden-btns">
-        <button type="button" class="btn-subir" title="Subir">▲</button>
-        <button type="button" class="btn-bajar" title="Bajar">▼</button>
-      </div>
-    `;
-
-    const chk = fila.querySelector(`input[data-bloque-check="${clave}"]`);
-    if (clave === "rsvp" && chk) {
-      chk.addEventListener("change", () => {
-        clienteActual.bloquesActivos = clienteActual.bloquesActivos || {};
-        clienteActual.bloquesActivos.rsvp = chk.checked;
-        renderizarEnlacesPrivados();
-      });
-    }
-
-    fila.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData("text/plain", clave);
-      fila.classList.add("dragging");
-    });
-    fila.addEventListener("dragend", () => fila.classList.remove("dragging"));
-    fila.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      const dragging = rejilla.querySelector(".dragging");
-      const siblings = [...rejilla.querySelectorAll(".fila-bloque-orden:not(.dragging)")];
-      const nextSibling = siblings.find((sibling) => {
-        const box = sibling.getBoundingClientRect();
-        return e.clientY <= box.top + box.height / 2;
-      });
-      rejilla.insertBefore(dragging, nextSibling);
-    });
-    fila.addEventListener("drop", (e) => {
-      e.preventDefault();
-      ordenBloquesActual = [...rejilla.querySelectorAll("[data-bloque-check]")].map(
-        (el) => el.dataset.bloqueCheck,
-      );
-    });
-
-    fila.querySelector(".btn-subir").addEventListener("click", () => {
-      const prev = fila.previousElementSibling;
-      if (prev) {
-        rejilla.insertBefore(fila, prev);
-        actualizarOrdenDesdeDOM(rejilla);
-      }
-    });
-
-    fila.querySelector(".btn-bajar").addEventListener("click", () => {
-      const next = fila.nextElementSibling;
-      if (next) {
-        rejilla.insertBefore(next, fila);
-        actualizarOrdenDesdeDOM(rejilla);
-      }
-    });
-
-    rejilla.appendChild(fila);
-  });
-}
-
-function actualizarOrdenDesdeDOM(rejilla) {
-  ordenBloquesActual = [...rejilla.querySelectorAll("[data-bloque-check]")].map(
-    (el) => el.dataset.bloqueCheck,
-  );
-}
-
-async function guardarClienteActual(elementoEstado) {
-  const global = leerFormularioGlobal();
-  const datosFinales = { ...global, secciones: clienteActual.secciones || {} };
-
-  if (elementoEstado) {
-    elementoEstado.hidden = false;
-    elementoEstado.textContent = "Guardando...";
-  }
-
-  try {
-    await guardarCliente(clienteIdRef.id, datosFinales);
-    clienteActual = await obtenerCliente(clienteIdRef.id);
-    renderizarEnlacesPrivados();
-    if (elementoEstado) {
-      elementoEstado.textContent = "Guardado ✓";
-      setTimeout(() => {
-        elementoEstado.hidden = true;
-      }, 2000);
-    }
-  } catch (err) {
-    if (elementoEstado) {
-      elementoEstado.textContent = "Error";
-      elementoEstado.style.color = "#a32d2d";
-    }
-    console.error(err);
-  }
-}
-
-function llenarSelectorSecciones() {
-  const select = document.getElementById("selector-seccion");
-  if (!select) return;
-  select.innerHTML = BLOQUES.map(
-    (b) => `<option value="${b.clave}">${b.etiqueta}</option>`,
-  ).join("");
-}
-
-function abrirModalSeccion() {
-  const select = document.getElementById("selector-seccion");
-  const clave = select.value;
-  const bloque = BLOQUES.find((b) => b.clave === clave);
-  if (!bloque) return;
-
-  document.getElementById("modal-titulo").textContent = `Editar: ${bloque.etiqueta}`;
-  const seccionCfg = (clienteActual.secciones && clienteActual.secciones[clave]) || {};
-  const modalBody = document.getElementById("modal-body");
-  modalBody.innerHTML = "";
-  renderSeccion(modalBody, clienteIdRef, clave, seccionCfg);
-  modalBody.dataset.seccion = clave;
-
-  const modal = document.getElementById("modal-seccion");
-  modal.style.display = "flex";
-}
-
-function cerrarModal() {
-  const modal = document.getElementById("modal-seccion");
-  modal.style.display = "none";
-  document.getElementById("modal-body").innerHTML = "";
-}
-
-function guardarDesdeModal() {
-  const modalBody = document.getElementById("modal-body");
-  const clave = modalBody.dataset.seccion;
-  if (!clave) return;
-
-  const seccionLeida = leerSeccion(modalBody);
-  if (!clienteActual.secciones) clienteActual.secciones = {};
-  clienteActual.secciones[clave] = seccionLeida;
-
-  guardarClienteActual(guardarEstadoSeccion);
-  cerrarModal();
-}
-
-function guardarGlobal() {
-  const global = leerFormularioGlobal();
-  Object.assign(clienteActual, global);
-  guardarClienteActual(guardarEstadoGlobal);
-}
-
-function guardarBloques() {
-  const bloquesActivos = {};
-  document.querySelectorAll("[data-bloque-check]").forEach((chk) => {
-    bloquesActivos[chk.dataset.bloqueCheck] = chk.checked;
-  });
-
-  clienteActual.bloquesActivos = bloquesActivos;
-  clienteActual.ordenBloques = [...ordenBloquesActual];
-  guardarClienteActual(guardarEstadoBloques);
-}
-
-function inicializarEventosNuevos() {
-  const btnGuardarGlobal = document.getElementById("btn-guardar-global");
-  if (btnGuardarGlobal) btnGuardarGlobal.addEventListener("click", guardarGlobal);
-
-  const btnGuardarBloques = document.getElementById("btn-guardar-bloques");
-  if (btnGuardarBloques) btnGuardarBloques.addEventListener("click", guardarBloques);
-
-  const btnEditarSeccion = document.getElementById("btn-editar-seccion");
-  if (btnEditarSeccion) btnEditarSeccion.addEventListener("click", abrirModalSeccion);
-
-  const btnModalGuardar = document.getElementById("modal-guardar");
-  if (btnModalGuardar) btnModalGuardar.addEventListener("click", guardarDesdeModal);
-
-  const btnModalCancelar = document.getElementById("modal-cancelar");
-  if (btnModalCancelar) btnModalCancelar.addEventListener("click", cerrarModal);
-
-  const btnModalCerrar = document.getElementById("modal-cerrar");
-  if (btnModalCerrar) btnModalCerrar.addEventListener("click", cerrarModal);
-
-  const modal = document.getElementById("modal-seccion");
-  if (modal) {
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) {
-        modal.style.display = "none";
-        document.getElementById("modal-body").innerHTML = "";
-      }
-    });
   }
 }
