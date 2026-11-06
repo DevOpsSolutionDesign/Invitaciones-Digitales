@@ -431,6 +431,10 @@ async function activarRSVP(seccionEl, cliente) {
     await cargarLibreriaQR();
     if (qrDiv) {
       qrDiv.innerHTML = "";
+      qrDiv.style.width = "180px";
+      qrDiv.style.heigth = "180px";
+      qrDiv.style.display = "180px";
+      qrDiv.style.margin = "15px auto";
       setTimeout(() => {
         if (window.QRCode) {
           new QRCode(qrDiv, {
@@ -442,7 +446,7 @@ async function activarRSVP(seccionEl, cliente) {
             correctLevel: QRCode.CorrectLevel.H,
           });
         }
-      }, 50);
+      }, 150);
     }
   }
 
