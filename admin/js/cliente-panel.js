@@ -248,6 +248,12 @@ async function procesarCheckIn(asistenteId, resultadoBox) {
         <p><strong>Lugares:</strong> ${data.cantidadAsistentes} personas</p>
         <p><strong>Mesa:</strong> ${data.numeroMesa || "Sin asignar"}</p>
       `;
+      timerLimpiezaScan = setTimeout(() => {
+      if (resultadoBox) {
+        resultadoBox.style.display = "none";
+        resultadoBox.innerHTML = "";
+      }
+    }, 10000);
       return; // Detenemos el flujo para que no vuelva a marcar check-in
     }
 
