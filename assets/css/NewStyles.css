@@ -385,18 +385,95 @@ body {
   transform: translateY(0);
 }
 
-#qrcode{
+/* ========================================================================== */
+/* ESTILOS PARA EL PASE DIGITAL Y QR DE RSVP                                  */
+/* ========================================================================== */
+
+.pase-container {
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+.pase-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border: 1px solid #e5e7eb;
+}
+
+.pase-card h3 {
+  margin-top: 0;
+  color: #1f2937;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.pase-card p {
+  color: #4b5563;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.qr-box {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 15px, auto;
+  width: 180px;
+  height: 180px;
+  margin: 20px auto;
   padding: 10px;
   background: #ffffff;
-  border: 1px, solid #e5e7eb;
+  border: 2px solid #e5e7eb;
   border-radius: 8px;
-  width: fit-content;
-  min-width: 150px;
-  min-heigth: 150px;
+  box-sizing: border-box;
+}
+
+/* Asegurar que la librería de QRCode (canvas o img) llene el espacio correctamente */
+.qr-box canvas,
+.qr-box img {
+  display: block;
+  width: 160px !important;
+  height: 160px !important;
+  margin: 0 auto;
+}
+
+.pase-info {
+  font-size: 14px;
+  color: #374151;
+  margin: 8px 0;
+  text-align: left;
+  background: #f9fafb;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #f3f4f6;
+}
+
+.pase-acciones {
+  margin-top: 20px;
+}
+
+.btn-whatsapp {
+  display: inline-block;
+  width: 100%;
+  padding: 12px 20px;
+  background: #25d366;
+  color: #ffffff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: background 0.2s;
+  text-align: center;
+}
+
+.btn-whatsapp:hover {
+  background: #20ba5a;
 }
 
 /* ============================================
