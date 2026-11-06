@@ -306,6 +306,7 @@ function abrirEditor() {
   renderRejillaBloques();
   llenarSelectorSecciones();
   inicializarEventosNuevos();
+	renderizarEnlacesPrivados();
 }
 
 function renderFormularioGlobal() {
