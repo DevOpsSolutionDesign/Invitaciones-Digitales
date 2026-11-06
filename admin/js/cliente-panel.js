@@ -211,9 +211,18 @@ function inicializarEscanerQR() {
   });
 }
 
+// Variable para almacenar el temporizador de limpieza automática del escáner
+let timerLimpiezaScan = null;
+
 async function procesarCheckIn(asistenteId, resultadoBox) {
   try {
-    const ref = doc(db, "clientes", clienteId, "asistentes", asistenteId);
+    // 1. Limpiar temporizador previo si existía
+    if (timerLimpiezaScan) {
+      clearTimeout(timerLimpiezaScan);
+      timerLimpiezaScan = null;
+    }
+
+    const ref = doc(db, "clientes", clienteId, "asistentes", asistenteId.trim());
     const snap = await getDoc(ref);
 
     resultadoBox.style.display = "block";
@@ -226,10 +235,33 @@ async function procesarCheckIn(asistenteId, resultadoBox) {
 
     const data = snap.data();
 
-    // Actualizar estado a ingresado
-    await updateDoc(ref, { estado: "ingresado" });
+    // 2. VALIDACIÓN DE DUPLICADO (Si ya fue escaneado e ingresó antes)
+    if (data.estado === "ingresado" || data.checkInRealizado === true) {
+      resultadoBox.className = "resultado-scan-box error"; // O clase warning si prefieres
+      resultadoBox.style.backgroundColor = "#fffbeb";
+      resultadoBox.style.borderColor = "#f59e0b";
+      resultadoBox.style.color = "#92400e";
+      resultadoBox.innerHTML = `
+        <h3>⚠️ ¡ALERTA DE DUPLICADO!</h3>
+        <p><strong>Este pase ya fue registrado anteriormente.</strong></p>
+        <p><strong>Familia:</strong> ${data.nombreFamilia}</p>
+        <p><strong>Lugares:</strong> ${data.cantidadAsistentes} personas</p>
+        <p><strong>Mesa:</strong> ${data.numeroMesa || "Sin asignar"}</p>
+      `;
+      return; // Detenemos el flujo para que no vuelva a marcar check-in
+    }
 
+    // 3. PRIMER INGRESO: Marcar como ingresado en Firestore
+    await updateDoc(ref, { 
+      estado: "ingresado",
+      checkInRealizado: true 
+    });
+
+    // 4. MOSTRAR ACCESO PERMITIDO (Actualiza inmediatamente con la info del nuevo código)
     resultadoBox.className = "resultado-scan-box success";
+    resultadoBox.style.backgroundColor = ""; // Resetear estilos inline por si venía de alerta
+    resultadoBox.style.borderColor = "";
+    resultadoBox.style.color = "";
     resultadoBox.innerHTML = `
       <h3>✅ Acceso Permitido</h3>
       <p><strong>Familia:</strong> ${data.nombreFamilia}</p>
@@ -237,11 +269,21 @@ async function procesarCheckIn(asistenteId, resultadoBox) {
       <p><strong>Mesa Asignada:</strong> ${data.numeroMesa || "Sin mesa asignada aún"} (${data.referenciaMesa || "Sin referencia"})</p>
     `;
 
-    // Recargar tabla para reflejar el cambio de estado
+    // Recargar tabla para reflejar el cambio de estado en vivo
     await cargarAsistentes("cliente");
+
+    // 5. AUTO-LIMPIEZA: Si pasan 10 segundos y no se escanea otro código, el cuadro se oculta solo
+    timerLimpiezaScan = setTimeout(() => {
+      if (resultadoBox) {
+        resultadoBox.style.display = "none";
+        resultadoBox.innerHTML = "";
+      }
+    }, 10000);
 
   } catch (err) {
     console.error("Error en check-in:", err);
+    resultadoBox.className = "resultado-scan-box error";
+    resultadoBox.innerHTML = "<h3>❌ Error</h3><p>Ocurrió un error al procesar el código QR en la base de datos.</p>";
   }
 }
 
