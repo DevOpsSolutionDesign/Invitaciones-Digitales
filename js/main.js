@@ -451,7 +451,7 @@ async function activarRSVP(seccionEl, cliente) {
 
         if (btnWhatsapp) {
           const personas = data.cantidadAsistentes === 1 ? "persona" : "personas";
-          const mensaje = `¡Hola! Somos la ${data.nombreFamilia}. Confirmamos nuestra asistencia (${data.cantidadAsistentes} ${personas}) para la boda de ${cliente.nombreFestejado}. 🎉`;
+        const mensaje = `¡Felicidades a ${cliente.nombreFestejado} ${cliente.fraseCelebracion}!. Somos la familia ${familia.toUpperCase()}. Confirmamos nuestra asistencia (${cantidad} ${personas}). 🎉`;
           btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
         }
 
@@ -502,7 +502,7 @@ async function activarRSVP(seccionEl, cliente) {
 
       if (btnWhatsapp) {
         const personas = cantidad === 1 ? "persona" : "personas";
-        const mensaje = `¡Hola! Somos la ${familia}. Confirmamos nuestra asistencia (${cantidad} ${personas}) para la boda de ${cliente.nombreFestejado}. 🎉`;
+        const mensaje = `¡Felicidades a ${cliente.nombreFestejado} ${cliente.fraseCelebracion}!. Somos la familia ${familia.toUpperCase()}. Confirmamos nuestra asistencia (${cantidad} ${personas}). 🎉`;
         btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
       }
 
