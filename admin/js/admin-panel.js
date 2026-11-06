@@ -44,6 +44,7 @@ window.paletasCache = paletasCache;
 const clienteIdRef = { id: null };
 let clienteActual = {};
 let ordenBloquesActual = [...ORDEN_DEFECTO];
+let paletaEditando = null;
 
 export async function inicializarPanel() {
   paletasCache = await listarPaletas();
@@ -76,12 +77,14 @@ export async function inicializarPanel() {
     vistaPaletas.hidden = false;
     await mostrarListaPaletas();
   });
+
   btnVolverDesdePaletas.addEventListener("click", () => {
     vistaPaletas.hidden = true;
     vistaLista.hidden = false;
   });
+
   btnNuevaPaleta.addEventListener("click", () => abrirFormPaleta(null));
-  
+
   const btnCerrarPaleta = document.getElementById("btn-cerrar-paleta");
   if (btnCerrarPaleta) {
     btnCerrarPaleta.addEventListener("click", cerrarEditorPaleta);
@@ -115,6 +118,91 @@ async function mostrarListaClientes() {
   });
 }
 
+// --- GESTIÓN DE PALETAS ---
+async function mostrarListaPaletas() {
+  paletasCache = await listarPaletas();
+  listaPaletasEl.innerHTML = "";
+
+  document.getElementById("paleta-editor").hidden = true;
+  document.getElementById("paleta-mensaje").hidden = false;
+
+  if (!paletasCache.length) {
+    listaPaletasEl.innerHTML = `<p class="lista-vacia">No hay paletas registradas.</p>`;
+    return;
+  }
+
+  paletasCache.forEach((p) => {
+    const fila = document.createElement("div");
+    fila.className = "paleta-fila";
+    fila.innerHTML = `<strong>${p.nombre || p.id}</strong><span>ID: ${p.id}</span>`;
+    fila.addEventListener("click", () => abrirFormPaleta(p));
+    listaPaletasEl.appendChild(fila);
+  });
+}
+
+function abrirFormPaleta(paleta) {
+  paletaEditando = paleta;
+  const editor = document.getElementById("paleta-editor");
+  const body = document.getElementById("paleta-editor-body");
+  const titulo = document.getElementById("paleta-editor-titulo");
+
+  document.getElementById("paleta-mensaje").hidden = true;
+  editor.hidden = false;
+
+  const id = paleta ? paleta.id : "";
+  const nombre = paleta ? paleta.nombre || "" : "";
+  const colores = paleta ? paleta.colores || {} : {
+    primario: "#8B2E2E",
+    secundario: "#D9B08C",
+    acento: "#C97B3D",
+    texto: "#2C2C2A",
+    fondo: "#FAF7F2",
+  };
+
+  titulo.textContent = paleta ? `Editar: ${nombre || id}` : "Nueva paleta";
+
+  body.innerHTML = `
+    <form id="form-paleta-edit">
+      ${!paleta ? `<div class="campo"><label>ID de paleta (ej. tonos-pastel)</label><input type="text" id="pal-id" required></div>` : ""}
+      <div class="campo"><label>Nombre</label><input type="text" id="pal-nombre" value="${nombre}" required></div>
+      <div class="campo"><label>Color Primario</label><input type="color" id="pal-primario" value="${colores.primario || '#8B2E2E'}"></div>
+      <div class="campo"><label>Color Secundario</label><input type="color" id="pal-secundario" value="${colores.secundario || '#D9B08C'}"></div>
+      <div class="campo"><label>Color Acento</label><input type="color" id="pal-acento" value="${colores.acento || '#C97B3D'}"></div>
+      <div class="campo"><label>Color Texto</label><input type="color" id="pal-texto" value="${colores.texto || '#2C2C2A'}"></div>
+      <div class="campo"><label>Color Fondo</label><input type="color" id="pal-fondo" value="${colores.fondo || '#FAF7F2'}"></div>
+      <button type="submit">Guardar Paleta</button>
+    </form>
+  `;
+
+  document.getElementById("form-paleta-edit").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nuevoId = paleta ? paleta.id : document.getElementById("pal-id").value.trim();
+    if (!nuevoId) return;
+
+    const datosPaleta = {
+      nombre: document.getElementById("pal-nombre").value.trim(),
+      colores: {
+        primario: document.getElementById("pal-primario").value,
+        secundario: document.getElementById("pal-secundario").value,
+        acento: document.getElementById("pal-acento").value,
+        texto: document.getElementById("pal-texto").value,
+        fondo: document.getElementById("pal-fondo").value,
+      }
+    };
+
+    await guardarPaleta(nuevoId, datosPaleta);
+    paletasCache = await listarPaletas();
+    window.paletasCache = paletasCache;
+    await mostrarListaPaletas();
+  });
+}
+
+function cerrarEditorPaleta() {
+  document.getElementById("paleta-editor").hidden = true;
+  document.getElementById("paleta-mensaje").hidden = false;
+  paletaEditando = null;
+}
+
 function abrirEditor() {
   vistaLista.hidden = true;
   vistaEditor.hidden = false;
@@ -142,7 +230,7 @@ function abrirEditor() {
   inicializarEventosNuevos();
 }
 
-// --- RENDERIZAR ENLACES DE ACCESO PRIVADO (PANEL CLIENTE Y ORGANIZADOR) ---
+// --- RENDERIZAR ENLACES DE ACCESO PRIVADO (CORRECCIÓN DE RUTA /admin/admin/) ---
 function renderizarEnlacesPrivados() {
   let contenedor = document.getElementById("seccion-accesos-privados-admin");
   const formGlobal = document.getElementById("form-global");
@@ -157,7 +245,14 @@ function renderizarEnlacesPrivados() {
 
   const rsvpActivo = clienteActual.bloquesActivos && clienteActual.bloquesActivos.rsvp === true;
   if (rsvpActivo && clienteActual.pinCliente) {
-    const baseUrl = window.location.origin + window.location.pathname.replace("admin/index.html", "");
+    let origin = window.location.origin;
+    let pathname = window.location.pathname;
+    // Cortar antes de /admin/ para obtener la raíz correcta del sitio
+    if (pathname.includes("admin/")) {
+      pathname = pathname.substring(0, pathname.lastIndexOf("admin/"));
+    }
+    const baseUrl = origin + pathname;
+
     const linkCliente = `${baseUrl}admin/cliente.html?id=${clienteIdRef.id}&token=${clienteActual.pinCliente}`;
     const linkOrg = `${baseUrl}admin/cliente.html?id=${clienteIdRef.id}&token=${clienteActual.pinOrganizador}`;
 
@@ -330,7 +425,6 @@ function renderRejillaBloques() {
       </div>
     `;
 
-    // Reaccionar al cambio del checkbox RSVP para actualizar dinámicamente los enlaces privados
     const chk = fila.querySelector(`input[data-bloque-check="${clave}"]`);
     if (clave === "rsvp" && chk) {
       chk.addEventListener("change", () => {
@@ -340,7 +434,6 @@ function renderRejillaBloques() {
       });
     }
 
-    // Drag and drop events
     fila.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", clave);
       fila.classList.add("dragging");
@@ -400,8 +493,8 @@ async function guardarClienteActual(elementoEstado) {
 
   try {
     await guardarCliente(clienteIdRef.id, datosFinales);
-    clienteActual = await obtenerCliente(clienteIdRef.id); // Recargar para obtener pines generados
-    renderizarEnlacesPrivados(); // Refrescar links
+    clienteActual = await obtenerCliente(clienteIdRef.id);
+    renderizarEnlacesPrivados();
     if (elementoEstado) {
       elementoEstado.textContent = "Guardado ✓";
       setTimeout(() => {
