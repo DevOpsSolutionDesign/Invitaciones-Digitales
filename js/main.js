@@ -402,19 +402,35 @@ async function activarRSVP(seccionEl, cliente) {
   const localKey = `rsvp_${clienteId}`;
   const savedAsistenteId = localStorage.getItem(localKey);
 
-  // Importar Firestore dinámicamente si no está global
+  // Importar Firestore
   const { db } = await import("./firebase-init.js");
   const { doc, getDoc, addDoc, collection, Timestamp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
 
-  // Función auxiliar para renderizar el QR de manera segura
-  async function renderizarQR(asistenteId) {
+  // Función para mostrar el pase y pintar el QR de forma segura
+  async function mostrarPaseYGenerarQR(asistenteId, familia, cantidad, numeroMesa = "", referenciaMesa = "") {
+    form.style.display = "none";
+    contenedorPase.style.display = "block"; // Asegurar que sea visible para que QRCode tome medidas
+
+    if (lblFamilia) lblFamilia.textContent = familia;
+    if (lblCantidad) lblCantidad.textContent = cantidad;
+    
+    if (lblMesa) {
+      if (numeroMesa) {
+        lblMesa.innerHTML = `<strong>${numeroMesa}</strong> <br><span class="ref-mesa">${referenciaMesa || ""}</span>`;
+      } else {
+        lblMesa.textContent = "Pendiente de asignar por los novios";
+      }
+    }
+
+    if (btnWhatsapp) {
+      const personas = cantidad === 1 ? "persona" : "personas";
+      const mensaje = `¡Felicidades a ${cliente.nombreFestejado} ${cliente.fraseCelebracion}!. Confirmamos nuestra asistencia (${cantidad} ${personas}), familia ${familia.toUpperCase()}. 🎉`;
+      btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
+    }
+
     await cargarLibreriaQR();
     if (qrDiv) {
-      qrDiv.innerHTML = ""; // Limpiar por si acaso
-      // Asegurar que el contenedor sea visible para que QRCode calcule dimensiones
-      contenedorPase.style.display = "block";
-      form.style.display = "none";
-
+      qrDiv.innerHTML = "";
       setTimeout(() => {
         if (window.QRCode) {
           new QRCode(qrDiv, {
@@ -425,40 +441,26 @@ async function activarRSVP(seccionEl, cliente) {
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H,
           });
-        } else {
-          qrDiv.textContent = `[ID Pase: ${asistenteId}]`;
         }
       }, 50);
     }
   }
 
-  // Si el invitado ya había confirmado antes en este navegador
+  // Si ya confirmó antes en este navegador
   if (savedAsistenteId) {
     try {
       const snap = await getDoc(doc(db, "clientes", clienteId, "asistentes", savedAsistenteId));
       if (snap.exists()) {
         const data = snap.data();
-        if (lblFamilia) lblFamilia.textContent = data.nombreFamilia;
-        if (lblCantidad) lblCantidad.textContent = data.cantidadAsistentes;
-        
-        if (lblMesa) {
-          if (data.numeroMesa) {
-            lblMesa.innerHTML = `<strong>${data.numeroMesa}</strong> <br><span class="ref-mesa">${data.referenciaMesa || ""}</span>`;
-          } else {
-            lblMesa.textContent = "Pendiente de asignar por los novios";
-          }
-        }
-
-        if (btnWhatsapp) {
-          const personas = data.cantidadAsistentes === 1 ? "persona" : "personas";
-        const mensaje = `¡Felicidades a ${cliente.nombreFestejado} ${cliente.fraseCelebracion}!. Somos la familia ${familia.toUpperCase()}. Confirmamos nuestra asistencia (${cantidad} ${personas}). 🎉`;
-          btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
-        }
-
-        await renderizarQR(savedAsistenteId);
+        await mostrarPaseYGenerarQR(
+          savedAsistenteId, 
+          data.nombreFamilia, 
+          data.cantidadAsistentes, 
+          data.numeroMesa, 
+          data.referenciaMesa
+        );
         return;
       } else {
-        // Si el ID guardado ya no existe en Firestore, limpiamos localStorage
         localStorage.removeItem(localKey);
       }
     } catch (e) {
@@ -466,7 +468,7 @@ async function activarRSVP(seccionEl, cliente) {
     }
   }
 
-  // Manejador del formulario nuevo RSVP
+  // Evento submit del formulario
   form.addEventListener("submit", async (evento) => {
     evento.preventDefault();
     const familiaInput = seccionEl.querySelector("#rsvp-familia");
@@ -496,17 +498,7 @@ async function activarRSVP(seccionEl, cliente) {
       const asistenteId = asistenteRef.id;
       localStorage.setItem(localKey, asistenteId);
 
-      if (lblFamilia) lblFamilia.textContent = familia;
-      if (lblCantidad) lblCantidad.textContent = cantidad;
-      if (lblMesa) lblMesa.textContent = "Pendiente de asignar por los novios";
-
-      if (btnWhatsapp) {
-        const personas = cantidad === 1 ? "persona" : "personas";
-        const mensaje = `¡Felicidades a ${cliente.nombreFestejado} ${cliente.fraseCelebracion}!. Somos la familia ${familia.toUpperCase()}. Confirmamos nuestra asistencia (${cantidad} ${personas}). 🎉`;
-        btnWhatsapp.href = `https://wa.me/${cliente.numeroWhatsapp}?text=${encodeURIComponent(mensaje)}`;
-      }
-
-      await renderizarQR(asistenteId);
+      await mostrarPaseYGenerarQR(asistenteId, familia, cantidad, "", "");
 
     } catch (err) {
       console.error("Error al guardar RSVP:", err);
